@@ -73,6 +73,9 @@ function LoginPage() {
   return (
     <main className="auth-page">
       <section className="auth-card">
+        <Link className="auth-brand" to="/" aria-label="Volver al inicio">
+          <span className="brand-mark">S</span><span>SecureHome</span>
+        </Link>
         <h1>Iniciar sesión</h1>
 
         <button

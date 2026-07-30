@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
 const labels = { pending: "Pendiente", contacted: "Contactado", scheduled: "Programado", installed: "Instalado", cancelled: "Cancelado" };
@@ -48,7 +48,7 @@ function AdminDashboard() {
   return (
     <main className="admin-page">
       <header className="dashboard-header">
-        <div><p className="dashboard-brand">SecureHome IoT · Administración</p><h1>Solicitudes de servicio</h1><p>Gestiona clientes e instalaciones desde un solo lugar.</p></div>
+        <div><Link className="dashboard-brand dashboard-brand-link" to="/">SecureHome IoT · Administración</Link><h1>Solicitudes de servicio</h1><p>Gestiona clientes e instalaciones desde un solo lugar.</p></div>
         <button className="logout-button" type="button" onClick={logout}>Cerrar sesión</button>
       </header>
       {message && <p className="dashboard-message" role="status">{message}</p>}

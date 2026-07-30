@@ -5,6 +5,7 @@ import ClientDashboard from "./pages/ClientDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import HomePage from "./pages/HomePage";
 import AuthCallbackPage from "./pages/AuthCallbackPage";
+import ServiceRequestPage from "./pages/ServiceRequestPage";
 import "./App.css";
 
 function App() {
@@ -14,7 +15,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/registro" element={<RegisterPage />} />
-        <Route path="/completar-registro" element={<RegisterPage />} />
+        <Route path="/completar-registro" element={<ServiceRequestPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route path="/dashboard" element={<ClientDashboard />} />
         <Route path="/admin" element={<AdminDashboard />} />

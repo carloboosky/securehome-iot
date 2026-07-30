@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
 function ClientDashboard() {
@@ -134,7 +134,7 @@ function ClientDashboard() {
     <main className="dashboard-page">
       <header className="dashboard-header">
         <div>
-          <p className="dashboard-brand">SecureHome IoT</p>
+          <Link className="dashboard-brand dashboard-brand-link" to="/">SecureHome IoT</Link>
           <h1>Hola, {perfil?.full_name || "Cliente"} 👋</h1>
           <p>Consulta el estado de tu servicio de seguridad.</p>
         </div>

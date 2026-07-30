@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
 function AuthCallbackPage() {
@@ -57,7 +57,21 @@ function AuthCallbackPage() {
       if (perfil?.role === "admin") {
         navigate("/admin", { replace: true });
       } else {
-        navigate("/dashboard", { replace: true });
+        const { data: solicitud, error: solicitudError } = await supabase
+          .from("service_requests")
+          .select("id")
+          .eq("client_id", usuario.id)
+          .limit(1)
+          .maybeSingle();
+
+        if (solicitudError) {
+          setMensaje(`No se pudo consultar tu solicitud: ${solicitudError.message}`);
+          return;
+        }
+
+        navigate(solicitud ? "/dashboard" : "/completar-registro", {
+          replace: true,
+        });
       }
     }
 
@@ -182,6 +196,9 @@ function AuthCallbackPage() {
   return (
     <main className="auth-page">
       <section className="auth-card">
+        <Link className="auth-brand" to="/" aria-label="Volver al inicio">
+          <span className="brand-mark">S</span><span>SecureHome</span>
+        </Link>
         <h1>Iniciando sesión</h1>
         <p>{mensaje}</p>
 

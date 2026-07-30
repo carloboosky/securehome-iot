@@ -86,7 +86,8 @@ footer small { grid-column:1/-1; padding-top:20px; border-top:1px solid var(--li
 /* Autenticación */
 .auth-page { min-height:100vh; display:grid; place-items:center; padding:45px 18px; background:radial-gradient(circle at 15% 15%,#eaf2ff,transparent 32%),radial-gradient(circle at 90% 80%,#e2f8f3,transparent 28%),#f8fafd; }
 .auth-card { width:min(100%,560px); padding:38px; border:1px solid var(--line); border-radius:22px; background:white; box-shadow:0 25px 70px rgba(16,29,54,.11); }
-.auth-card::before { content:"SecureHome"; display:block; margin-bottom:24px; color:var(--blue); font:800 19px "Manrope"; }
+.auth-brand { display:inline-flex; align-items:center; gap:10px; margin-bottom:24px; color:var(--navy)!important; font:800 19px "Manrope"; text-decoration:none; }
+.auth-brand .brand-mark { width:30px; height:34px; font-size:14px; }
 .auth-card h1 { margin:0 0 8px; color:var(--navy); font:800 32px "Manrope"; }
 .auth-card > p { color:var(--muted); }
 .auth-card a { color:var(--blue); font-weight:700; }
@@ -111,6 +112,9 @@ input:focus,select:focus,textarea:focus { border-color:var(--blue); box-shadow:0
 .dashboard-header h1 { margin:5px 0; font:800 clamp(30px,4vw,46px) "Manrope"; }
 .dashboard-header p,.events-heading p { margin:0; color:var(--muted); }
 .dashboard-brand { color:var(--blue)!important; font-weight:800; text-transform:uppercase; letter-spacing:1px; }
+.dashboard-brand-link { display:inline-block; text-decoration:none; }
+.dashboard-brand-link:hover { text-decoration:underline; }
+.form-step { display:table; margin-bottom:10px; padding:6px 10px; border-radius:20px; color:var(--blue); background:#edf3ff; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:1px; }
 .logout-button,.card-button,.primary-button { border:0; border-radius:10px; padding:12px 18px; cursor:pointer; font-weight:800; }
 .logout-button { background:var(--navy); color:white; }
 .card-button,.primary-button { color:white; background:var(--blue); }

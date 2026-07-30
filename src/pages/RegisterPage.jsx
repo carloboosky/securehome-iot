@@ -274,6 +274,9 @@ function RegisterPage() {
   return (
     <main className="auth-page">
       <section className="auth-card">
+        <Link className="auth-brand" to="/" aria-label="Volver al inicio">
+          <span className="brand-mark">S</span><span>SecureHome</span>
+        </Link>
         <h1>Crear cuenta</h1>
 
         <p>Solicita tu sistema de seguridad SecureHome IoT.</p>
