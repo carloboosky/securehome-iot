@@ -15,6 +15,7 @@ function AdminDashboard() {
   const [message, setMessage] = useState("");
   const [chatRequest, setChatRequest] = useState(null);
   const [cameraRequest, setCameraRequest] = useState(null);
+  const [unreadByRequest, setUnreadByRequest] = useState({});
 
   useEffect(() => {
     if (!chatRequest && !cameraRequest) return undefined;
@@ -24,6 +25,49 @@ function AdminDashboard() {
       document.body.style.overflow = previousOverflow;
     };
   }, [chatRequest, cameraRequest]);
+
+  useEffect(() => {
+    let active = true;
+    supabase.from("service_messages")
+      .select("request_id")
+      .eq("sender_role", "client")
+      .is("read_at", null)
+      .then(({ data }) => {
+        if (!active) return;
+        setUnreadByRequest((data || []).reduce((counts, item) => ({
+          ...counts,
+          [item.request_id]: (counts[item.request_id] || 0) + 1,
+        }), {}));
+      });
+
+    const channel = supabase.channel("admin-unread-by-request")
+      .on("postgres_changes", {
+        event: "INSERT",
+        schema: "public",
+        table: "service_messages",
+      }, payload => {
+        if (payload.new.sender_role !== "client") return;
+        setUnreadByRequest(counts => ({
+          ...counts,
+          [payload.new.request_id]: (counts[payload.new.request_id] || 0) + 1,
+        }));
+      }).subscribe();
+
+    return () => {
+      active = false;
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  async function abrirChat(request) {
+    setChatRequest(request);
+    setUnreadByRequest(counts => ({ ...counts, [request.id]: 0 }));
+    await supabase.from("service_messages")
+      .update({ read_at: new Date().toISOString() })
+      .eq("request_id", request.id)
+      .eq("sender_role", "client")
+      .is("read_at", null);
+  }
 
   useEffect(() => {
     async function load() {
@@ -67,9 +111,9 @@ function AdminDashboard() {
         <button className="logout-button" type="button" onClick={logout}>Cerrar sesión</button>
       </header>
       {message && <p className="dashboard-message" role="status">{message}</p>}
-      <MessageNotifications role="admin" onOpen={requestId => {
+      <MessageNotifications role="admin" showBubble={false} onOpen={requestId => {
         const request = requests.find(item => item.id === requestId);
-        if (request) setChatRequest(request);
+        if (request) abrirChat(request);
       }} />
       <section className="admin-summary">
         <article className="summary-card"><span>Solicitudes totales</span><b>{requests.length}</b></article>
@@ -86,7 +130,7 @@ function AdminDashboard() {
               <td>{item.service_plans?.name || "Sin plan"}</td><td>{item.property_type}</td><td>{item.installation_address}</td>
               <td>{new Intl.DateTimeFormat("es-EC").format(new Date(item.created_at))}</td>
               <td><select aria-label={`Estado de ${item.profiles?.full_name || "cliente"}`} value={item.status || "pending"} onChange={e => updateStatus(item.id, e.target.value)}>{Object.entries(labels).map(([value,label]) => <option value={value} key={value}>{label}</option>)}</select></td>
-              <td><div className="table-actions"><button type="button" className="table-chat-button" onClick={() => setChatRequest(item)}>Chat</button><button type="button" className="table-camera-button" onClick={() => setCameraRequest(item)}>Cámara</button></div></td>
+              <td><div className="table-actions"><button type="button" className="table-chat-button" onClick={() => abrirChat(item)}>Chat{unreadByRequest[item.id] > 0 && <span className="row-unread-badge">{unreadByRequest[item.id] > 99 ? "99+" : unreadByRequest[item.id]}</span>}</button><button type="button" className="table-camera-button" onClick={() => setCameraRequest(item)}>Cámara</button></div></td>
             </tr>)}</tbody>
           </table>}
       </section>

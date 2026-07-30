@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-function MessageNotifications({ role, onOpen }) {
+function MessageNotifications({ role, onOpen, showBubble = true }) {
   const [pending, setPending] = useState([]);
   const [latest, setLatest] = useState(null);
 
@@ -50,7 +50,7 @@ function MessageNotifications({ role, onOpen }) {
 
   return (
     <>
-      <button type="button" className="message-bubble" aria-label={`${pending.length} mensajes pendientes`} onClick={() => {
+      {showBubble && <button type="button" className="message-bubble" aria-label={`${pending.length} mensajes pendientes`} onClick={() => {
         if (pending[0]) openConversation(pending[0].request_id);
         else {
           enableNotifications();
@@ -58,7 +58,7 @@ function MessageNotifications({ role, onOpen }) {
         }
       }}>
         💬{pending.length > 0 && <span>{pending.length > 99 ? "99+" : pending.length}</span>}
-      </button>
+      </button>}
       {latest && <button type="button" className="message-toast" onClick={() => openConversation(latest.request_id)}>
         <span>💬</span><div><b>Nuevo mensaje</b><p>{latest.message || "Te enviaron una fotografía."}</p></div><i>Ver</i>
       </button>}
