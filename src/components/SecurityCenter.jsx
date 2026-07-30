@@ -6,6 +6,19 @@ const days = [
   ["vie", "Vie"], ["sab", "Sáb"], ["dom", "Dom"],
 ];
 
+const timeOptions = Array.from({ length: 48 }, (_, index) => {
+  const hours = String(Math.floor(index / 2)).padStart(2, "0");
+  const minutes = index % 2 ? "30" : "00";
+  return `${hours}:${minutes}`;
+});
+
+function normalizeTime(value, fallback) {
+  if (!/^\d{2}:\d{2}$/.test(value || "")) return fallback;
+  const [hours, minutes] = value.split(":").map(Number);
+  const roundedSlots = Math.round((hours * 60 + minutes) / 30) % 48;
+  return timeOptions[roundedSlots];
+}
+
 const defaultConfig = {
   armed: false,
   nfcDoor: false,
@@ -20,7 +33,13 @@ function SecurityCenter({ requestId }) {
   const storageKey = `securehome-config-${requestId}`;
   const [config, setConfig] = useState(() => {
     try {
-      return { ...defaultConfig, ...JSON.parse(localStorage.getItem(storageKey)) };
+      const stored = JSON.parse(localStorage.getItem(storageKey)) || {};
+      return {
+        ...defaultConfig,
+        ...stored,
+        start: normalizeTime(stored.start, defaultConfig.start),
+        end: normalizeTime(stored.end, defaultConfig.end),
+      };
     } catch {
       return defaultConfig;
     }
@@ -197,9 +216,9 @@ function SecurityCenter({ requestId }) {
             <div className="day-picker">{days.map(([value, label]) => <button type="button" aria-label={value} className={config.days.includes(value) ? "selected" : ""} onClick={() => toggleDay(value)} key={value}><i>✓</i>{label}</button>)}</div>
           </div>
           <div className="time-range">
-            <label><span>🌙 Hora de inicio</span><input type="time" value={config.start} onChange={event => update("start", event.target.value)}/></label>
+            <label><span>🌙 Hora de inicio</span><select value={config.start} onChange={event => update("start", event.target.value)}>{timeOptions.map(time => <option value={time} key={time}>{time}</option>)}</select></label>
             <b>→</b>
-            <label><span>☀️ Hora de fin</span><input type="time" value={config.end} onChange={event => update("end", event.target.value)}/></label>
+            <label><span>☀️ Hora de fin</span><select value={config.end} onChange={event => update("end", event.target.value)}>{timeOptions.map(time => <option value={time} key={time}>{time}</option>)}</select></label>
           </div>
           <p className="schedule-summary">🛡️ El sistema se activará de <strong>{config.start}</strong> a <strong>{config.end}</strong> los días seleccionados.</p>
         </div>}
