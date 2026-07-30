@@ -26,13 +26,34 @@ function LoginPage() {
       return;
     }
 
-    const userId = data.user.id;
+    await redirigirSegunRol(data.user.id);
+  }
 
+  async function iniciarSesionConGoogle() {
+    setMensaje("");
+    setCargando(true);
+
+    const redirectTo = `${window.location.origin}/auth/callback`;
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo,
+      },
+    });
+
+    if (error) {
+      setMensaje(`No se pudo iniciar sesión con Google: ${error.message}`);
+      setCargando(false);
+    }
+  }
+
+  async function redirigirSegunRol(userId) {
     const { data: perfil, error: perfilError } = await supabase
       .from("profiles")
       .select("role")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
 
     if (perfilError) {
       setMensaje("No se pudo obtener el perfil del usuario.");
@@ -40,7 +61,7 @@ function LoginPage() {
       return;
     }
 
-    if (perfil.role === "admin") {
+    if (perfil?.role === "admin") {
       navigate("/admin");
     } else {
       navigate("/dashboard");
@@ -53,6 +74,19 @@ function LoginPage() {
     <main className="auth-page">
       <section className="auth-card">
         <h1>Iniciar sesión</h1>
+
+        <button
+          type="button"
+          className="google-button"
+          onClick={iniciarSesionConGoogle}
+          disabled={cargando}
+        >
+          Continuar con Google
+        </button>
+
+        <div className="auth-divider">
+          <span>o inicia sesión con correo</span>
+        </div>
 
         <form onSubmit={iniciarSesion} className="auth-form">
           <label>

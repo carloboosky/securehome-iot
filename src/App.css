@@ -466,3 +466,42 @@ line-height:1.7;
     width: 100%;
   }
 }
+.google-button {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: white;
+  color: #1f2937;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.google-button:hover {
+  background: #f8fafc;
+}
+
+.google-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  margin: 20px 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #d1d5db;
+}
+
+.auth-divider span {
+  padding: 0 12px;
+}
