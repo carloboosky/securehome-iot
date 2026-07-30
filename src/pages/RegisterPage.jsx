@@ -6,6 +6,7 @@ function RegisterPage() {
   const navigate = useNavigate();
 
   const [planes, setPlanes] = useState([]);
+
   const [formulario, setFormulario] = useState({
     nombre: "",
     telefono: "",
@@ -21,29 +22,27 @@ function RegisterPage() {
   const [errores, setErrores] = useState({});
   const [mensajeGeneral, setMensajeGeneral] = useState("");
   const [cargando, setCargando] = useState(false);
+
   useEffect(() => {
-  async function cargarPlanes() {
-    const { data, error } = await supabase
-      .from("service_plans")
-      .select("*")
-      .order("id");
+    async function cargarPlanes() {
+      const { data, error } = await supabase
+        .from("service_plans")
+        .select("*")
+        .order("id");
 
-    console.log("DATA:", data);
-    console.log("ERROR:", error);
+      if (error) {
+        setMensajeGeneral(
+          `No se pudieron cargar los servicios: ${error.message}`
+        );
+        return;
+      }
 
-    if (error) {
-      setMensajeGeneral(
-        `No se pudieron cargar los servicios: ${error.message}`
-      );
-      return;
+      setPlanes(data ?? []);
     }
 
-    setPlanes(data ?? []);
-  }
+    cargarPlanes();
+  }, []);
 
-  cargarPlanes();
-}, []);
-   
   function manejarCambio(evento) {
     const { name, value } = evento.target;
 
@@ -78,7 +77,8 @@ function RegisterPage() {
     if (!formulario.telefono) {
       nuevosErrores.telefono = "El teléfono es obligatorio.";
     } else if (!/^\d{10}$/.test(formulario.telefono)) {
-      nuevosErrores.telefono = "El teléfono debe contener exactamente 10 números.";
+      nuevosErrores.telefono =
+        "El teléfono debe contener exactamente 10 números.";
     } else if (!formulario.telefono.startsWith("09")) {
       nuevosErrores.telefono =
         "El teléfono ecuatoriano debe comenzar con 09.";
@@ -114,7 +114,11 @@ function RegisterPage() {
         erroresPassword.push("un número");
       }
 
-      if (!/[!@#$%^&*(),.?":{}|<>_\-+=/\\[\];'`~]/.test(formulario.password)) {
+      if (
+        !/[!@#$%^&*(),.?":{}|<>_\-+=/\\[\];'`~]/.test(
+          formulario.password
+        )
+      ) {
         erroresPassword.push("un carácter especial");
       }
 
@@ -157,6 +161,25 @@ function RegisterPage() {
     return Object.keys(nuevosErrores).length === 0;
   }
 
+  async function registrarseConGoogle() {
+    setMensajeGeneral("");
+    setCargando(true);
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+
+    if (error) {
+      setMensajeGeneral(
+        `No se pudo continuar con Google: ${error.message}`
+      );
+      setCargando(false);
+    }
+  }
+
   async function registrarUsuario(evento) {
     evento.preventDefault();
     setMensajeGeneral("");
@@ -184,27 +207,27 @@ function RegisterPage() {
     });
 
     if (error) {
-      if (error.message.toLowerCase().includes("already registered")) {
+      const mensajeError = error.message.toLowerCase();
+
+      if (mensajeError.includes("already registered")) {
         setErrores((anteriores) => ({
           ...anteriores,
           correo: "Este correo ya está registrado.",
         }));
-      } else if (
-        error.message.toLowerCase().includes("password")
-      ) {
+      } else if (mensajeError.includes("password")) {
         setErrores((anteriores) => ({
           ...anteriores,
           password: error.message,
         }));
-      } else if (
-        error.message.toLowerCase().includes("email")
-      ) {
+      } else if (mensajeError.includes("email")) {
         setErrores((anteriores) => ({
           ...anteriores,
           correo: error.message,
         }));
       } else {
-        setMensajeGeneral(`Error al crear la cuenta: ${error.message}`);
+        setMensajeGeneral(
+          `Error al crear la cuenta: ${error.message}`
+        );
       }
 
       setCargando(false);
@@ -252,9 +275,27 @@ function RegisterPage() {
     <main className="auth-page">
       <section className="auth-card">
         <h1>Crear cuenta</h1>
+
         <p>Solicita tu sistema de seguridad SecureHome IoT.</p>
 
-        <form onSubmit={registrarUsuario} className="auth-form" noValidate>
+        <button
+          type="button"
+          className="google-button"
+          onClick={registrarseConGoogle}
+          disabled={cargando}
+        >
+          {cargando ? "Abriendo Google..." : "Continuar con Google"}
+        </button>
+
+        <div className="auth-divider">
+          <span>o regístrate con correo</span>
+        </div>
+
+        <form
+          onSubmit={registrarUsuario}
+          className="auth-form"
+          noValidate
+        >
           <label>
             Nombre completo
             <input
@@ -264,8 +305,11 @@ function RegisterPage() {
               placeholder="Carlo Carrión"
               className={errores.nombre ? "input-error" : ""}
             />
+
             {errores.nombre && (
-              <span className="field-error">{errores.nombre}</span>
+              <span className="field-error">
+                {errores.nombre}
+              </span>
             )}
           </label>
 
@@ -280,8 +324,11 @@ function RegisterPage() {
               maxLength={10}
               className={errores.telefono ? "input-error" : ""}
             />
+
             {errores.telefono && (
-              <span className="field-error">{errores.telefono}</span>
+              <span className="field-error">
+                {errores.telefono}
+              </span>
             )}
           </label>
 
@@ -295,8 +342,11 @@ function RegisterPage() {
               placeholder="usuario@correo.com"
               className={errores.correo ? "input-error" : ""}
             />
+
             {errores.correo && (
-              <span className="field-error">{errores.correo}</span>
+              <span className="field-error">
+                {errores.correo}
+              </span>
             )}
           </label>
 
@@ -310,12 +360,16 @@ function RegisterPage() {
               placeholder="Mínimo 8 caracteres"
               className={errores.password ? "input-error" : ""}
             />
+
             <small className="password-help">
-              Debe tener 8 caracteres, mayúscula, minúscula, número y carácter
-              especial.
+              Debe tener 8 caracteres, mayúscula, minúscula,
+              número y carácter especial.
             </small>
+
             {errores.password && (
-              <span className="field-error">{errores.password}</span>
+              <span className="field-error">
+                {errores.password}
+              </span>
             )}
           </label>
 
@@ -330,6 +384,7 @@ function RegisterPage() {
                 errores.confirmarPassword ? "input-error" : ""
               }
             />
+
             {errores.confirmarPassword && (
               <span className="field-error">
                 {errores.confirmarPassword}
@@ -353,8 +408,11 @@ function RegisterPage() {
                 </option>
               ))}
             </select>
+
             {errores.planId && (
-              <span className="field-error">{errores.planId}</span>
+              <span className="field-error">
+                {errores.planId}
+              </span>
             )}
           </label>
 
@@ -381,8 +439,11 @@ function RegisterPage() {
               placeholder="Ciudad, sector y referencia"
               className={errores.direccion ? "input-error" : ""}
             />
+
             {errores.direccion && (
-              <span className="field-error">{errores.direccion}</span>
+              <span className="field-error">
+                {errores.direccion}
+              </span>
             )}
           </label>
 
@@ -406,7 +467,8 @@ function RegisterPage() {
         </form>
 
         <p>
-          ¿Ya tienes una cuenta? <Link to="/login">Inicia sesión</Link>
+          ¿Ya tienes una cuenta?{" "}
+          <Link to="/login">Inicia sesión</Link>
         </p>
       </section>
     </main>
