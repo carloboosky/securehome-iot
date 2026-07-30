@@ -385,7 +385,7 @@ function RegisterPage() {
               name="nombre"
               value={formulario.nombre}
               onChange={manejarCambio}
-              placeholder="Carlo Carrión"
+              placeholder="Nombre completo"
               className={errores.nombre ? "input-error" : ""}
               aria-invalid={Boolean(errores.nombre)}
             />
@@ -403,7 +403,7 @@ function RegisterPage() {
               name="telefono"
               value={formulario.telefono}
               onChange={manejarCambio}
-              placeholder="0999999999"
+              placeholder="Teléfono"
               inputMode="numeric"
               maxLength={10}
               className={errores.telefono ? "input-error" : ""}
@@ -424,7 +424,7 @@ function RegisterPage() {
               name="correo"
               value={formulario.correo}
               onChange={manejarCambio}
-              placeholder="usuario@correo.com"
+              placeholder="Correo electrónico"
               className={errores.correo ? "input-error" : ""}
               aria-invalid={Boolean(errores.correo)}
             />
@@ -467,6 +467,7 @@ function RegisterPage() {
               name="confirmarPassword"
               value={formulario.confirmarPassword}
               onChange={manejarCambio}
+              placeholder="Confirmar contraseña"
               className={
                 errores.confirmarPassword ? "input-error" : ""
               }

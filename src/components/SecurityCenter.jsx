@@ -51,6 +51,12 @@ function SecurityCenter({ requestId }) {
   });
   const [cameraUrl, setCameraUrl] = useState(CAMERA_STREAM_URL);
   const [cameraOnline, setCameraOnline] = useState(false);
+  const [scheduleDraft, setScheduleDraft] = useState(() => ({
+    mode: config.mode,
+    days: config.days,
+    start: config.start,
+    end: config.end,
+  }));
   const [accessCode, setAccessCode] = useState("");
   const [accessExpires, setAccessExpires] = useState("");
   const [urgentDismissed, setUrgentDismissed] = useState(false);
@@ -260,9 +266,32 @@ function SecurityCenter({ requestId }) {
   }
 
   function toggleDay(day) {
-    update("days", config.days.includes(day)
-      ? config.days.filter(item => item !== day)
-      : [...config.days, day]);
+    setScheduleDraft(previous => ({
+      ...previous,
+      days: previous.days.includes(day)
+        ? previous.days.filter(item => item !== day)
+        : [...previous.days, day],
+    }));
+  }
+
+  function confirmAllDay() {
+    setConfig(previous => ({ ...previous, mode: "always" }));
+    setNotice("Horario confirmado: el sistema protegerá tu hogar todo el día.");
+  }
+
+  function confirmCustomSchedule() {
+    if (scheduleDraft.days.length === 0) {
+      setNotice("Selecciona al menos un día para confirmar el horario.");
+      return;
+    }
+    setConfig(previous => ({
+      ...previous,
+      mode: "custom",
+      days: scheduleDraft.days,
+      start: scheduleDraft.start,
+      end: scheduleDraft.end,
+    }));
+    setNotice(`Horario personalizado confirmado: ${scheduleDraft.start} a ${scheduleDraft.end}.`);
   }
 
   function testAlarm() {
@@ -364,21 +393,28 @@ function SecurityCenter({ requestId }) {
       <article className="schedule-card">
         <div className="schedule-title"><span>🕒</span><div><h3>Horario de protección</h3><p>Decide cuándo se activará automáticamente el sistema.</p></div></div>
         <div className="mode-buttons">
-          <button type="button" className={config.mode === "always" ? "selected" : ""} onClick={() => update("mode", "always")}>Todo el día</button>
-          <button type="button" className={config.mode === "custom" ? "selected" : ""} onClick={() => update("mode", "custom")}>Horario personalizado</button>
+          <button type="button" className={scheduleDraft.mode === "always" ? "selected" : ""} onClick={() => setScheduleDraft(previous => ({ ...previous, mode: "always" }))}><span>☀️</span><b>Todo el día</b><small>Protección continua 24/7</small></button>
+          <button type="button" className={scheduleDraft.mode === "custom" ? "selected" : ""} onClick={() => setScheduleDraft(previous => ({ ...previous, mode: "custom" }))}><span>🗓️</span><b>Personalizado</b><small>Elige días y horas</small></button>
         </div>
-        {config.mode === "custom" && <div className="custom-schedule">
+        {scheduleDraft.mode === "always" && <div className="all-day-schedule">
+          <span>🛡️</span>
+          <div><b>Protección activa las 24 horas</b><p>El sistema permanecerá preparado todos los días, sin interrupciones.</p></div>
+          <button type="button" onClick={confirmAllDay}>{config.mode === "always" ? "Confirmar nuevamente" : "Confirmar todo el día"}</button>
+        </div>}
+        {scheduleDraft.mode === "custom" && <div className="custom-schedule">
           <div className="schedule-days">
             <span>Días activos</span>
-            <div className="day-picker">{days.map(([value, label]) => <button type="button" aria-label={value} className={config.days.includes(value) ? "selected" : ""} onClick={() => toggleDay(value)} key={value}><i>✓</i>{label}</button>)}</div>
+            <div className="day-picker">{days.map(([value, label]) => <button type="button" aria-label={value} className={scheduleDraft.days.includes(value) ? "selected" : ""} onClick={() => toggleDay(value)} key={value}><i>✓</i>{label}</button>)}</div>
           </div>
           <div className="time-range">
-            <label><span>🌙 Hora de inicio</span><select value={config.start} onChange={event => update("start", event.target.value)}>{timeOptions.map(time => <option value={time} key={time}>{time}</option>)}</select></label>
+            <label><span>🌙 Hora de inicio</span><select value={scheduleDraft.start} onChange={event => setScheduleDraft(previous => ({ ...previous, start: event.target.value }))}>{timeOptions.map(time => <option value={time} key={time}>{time}</option>)}</select></label>
             <b>→</b>
-            <label><span>☀️ Hora de fin</span><select value={config.end} onChange={event => update("end", event.target.value)}>{timeOptions.map(time => <option value={time} key={time}>{time}</option>)}</select></label>
+            <label><span>☀️ Hora de fin</span><select value={scheduleDraft.end} onChange={event => setScheduleDraft(previous => ({ ...previous, end: event.target.value }))}>{timeOptions.map(time => <option value={time} key={time}>{time}</option>)}</select></label>
           </div>
-          <p className="schedule-summary">🛡️ El sistema se activará de <strong>{config.start}</strong> a <strong>{config.end}</strong> los días seleccionados.</p>
+          <p className="schedule-summary">🛡️ El sistema se activará de <strong>{scheduleDraft.start}</strong> a <strong>{scheduleDraft.end}</strong> los días seleccionados.</p>
+          <button type="button" className="confirm-schedule-button" onClick={confirmCustomSchedule}>✓ Confirmar horario personalizado</button>
         </div>}
+        <p className="saved-schedule">Configuración guardada: <strong>{config.mode === "always" ? "protección todo el día" : `${config.start} a ${config.end}`}</strong></p>
       </article>
       <p className="integration-note">Los ajustes se guardan en este navegador. Para controlar la cámara, sirena, NFC y Telegram físicamente, el técnico debe conectar la API del equipo instalado.</p>
     </section>

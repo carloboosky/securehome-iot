@@ -122,7 +122,7 @@ function ServiceRequestPage() {
         <p>Completa esta información para preparar tu visita técnica.</p>
         <form className="auth-form" onSubmit={submit} noValidate>
           <label>Teléfono
-            <input name="phone" inputMode="numeric" maxLength={10} placeholder="0999999999" value={form.phone} onChange={change} className={errors.phone ? "input-error" : ""}/>
+            <input name="phone" inputMode="numeric" maxLength={10} placeholder="Teléfono" value={form.phone} onChange={change} className={errors.phone ? "input-error" : ""}/>
             {errors.phone && <span className="field-error">{errors.phone}</span>}
           </label>
           <label>Plan de seguridad

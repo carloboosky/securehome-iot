@@ -112,7 +112,7 @@ function AdminDashboard() {
     <main className="admin-page">
       <header className="dashboard-header">
         <div><Link className="dashboard-brand dashboard-brand-link" to="/">SecureHome IoT · Administración</Link><h1>Solicitudes de servicio</h1><p>Gestiona clientes e instalaciones desde un solo lugar.</p></div>
-        <button className="logout-button" type="button" onClick={logout}>Cerrar sesión</button>
+        <div className="dashboard-header-actions"><Link className="home-button" to="/">⌂ Página principal</Link><button className="logout-button" type="button" onClick={logout}>Cerrar sesión</button></div>
       </header>
       {message && <p className="dashboard-message" role="status">{message}</p>}
       <MessageNotifications role="admin" showBubble={false} onOpen={requestId => {

@@ -107,6 +107,7 @@ function LoginPage() {
               type="email"
               value={correo}
               onChange={(evento) => setCorreo(evento.target.value)}
+              placeholder="Correo electrónico"
               required
             />
           </label>
@@ -117,6 +118,7 @@ function LoginPage() {
               type="password"
               value={password}
               onChange={(evento) => setPassword(evento.target.value)}
+              placeholder="Contraseña"
               required
             />
           </label>

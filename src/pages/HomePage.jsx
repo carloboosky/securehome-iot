@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import heroImage from "../assets/hero.png";
+import { useAuth } from "../contexts/auth";
 
 const services = [
   ["camera", "Monitoreo en vivo", "Visualiza la cámara de seguridad en alta definición desde cualquier lugar y en cualquier momento."],
@@ -28,7 +29,11 @@ function Icon({ name }) {
 
 function HomePage() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { session, role, loading } = useAuth();
   const closeMenu = () => setMenuOpen(false);
+  const dashboardPath = role === "admin" ? "/admin" : "/dashboard";
+  const email = session?.user?.email || "";
+  const initial = email.charAt(0).toUpperCase() || "U";
 
   return (
     <div className="home-page">
@@ -44,10 +49,23 @@ function HomePage() {
           <a href="#servicios" onClick={closeMenu}>Servicios</a>
           <a href="#planes" onClick={closeMenu}>Planes</a>
           <a href="#contacto" onClick={closeMenu}>Contacto</a>
+          {!loading && <Link className="mobile-session-link" to={session ? dashboardPath : "/login"} onClick={closeMenu}>
+            {session ? `Mi panel · ${email}` : "Iniciar sesión"}
+          </Link>}
         </nav>
         <div className="nav-buttons">
-          <Link className="btn-link btn-ghost" to="/login">Iniciar sesión</Link>
-          <Link className="btn-link btn-primary" to="/registro">Proteger mi hogar</Link>
+          {loading ? <span className="session-loading">Comprobando sesión...</span> : session ? (
+            <Link className="session-chip" to={dashboardPath} aria-label={`Ir al panel de ${email}`}>
+              <span className="session-avatar">{initial}</span>
+              <span><small>Sesión iniciada</small><b>{email}</b></span>
+              <i>→</i>
+            </Link>
+          ) : (
+            <>
+              <Link className="btn-link btn-ghost" to="/login">Iniciar sesión</Link>
+              <Link className="btn-link btn-primary" to="/registro">Proteger mi hogar</Link>
+            </>
+          )}
         </div>
       </header>
 

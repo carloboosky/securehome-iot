@@ -168,13 +168,10 @@ function ClientDashboard() {
           <p>Consulta el estado de tu servicio de seguridad.</p>
         </div>
 
-        <button
-          type="button"
-          className="logout-button"
-          onClick={cerrarSesion}
-        >
-          Cerrar sesión
-        </button>
+        <div className="dashboard-header-actions">
+          <Link className="home-button" to="/">⌂ Página principal</Link>
+          <button type="button" className="logout-button" onClick={cerrarSesion}>Cerrar sesión</button>
+        </div>
       </header>
 
       {mensaje && (
