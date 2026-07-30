@@ -6,6 +6,7 @@ function RequestChat({ requestId, role }) {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [file, setFile] = useState(null);
   const [error, setError] = useState("");
   const endRef = useRef(null);
 
@@ -15,7 +16,7 @@ function RequestChat({ requestId, role }) {
     async function loadMessages() {
       const { data, error: queryError } = await supabase
         .from("service_messages")
-        .select("id,sender_id,sender_role,message,created_at")
+        .select("id,sender_id,sender_role,message,image_path,read_at,created_at")
         .eq("request_id", requestId)
         .order("created_at", { ascending: true });
 
@@ -59,7 +60,7 @@ function RequestChat({ requestId, role }) {
   async function send(event) {
     event.preventDefault();
     const cleanText = text.trim();
-    if (!cleanText || sending) return;
+    if ((!cleanText && !file) || sending) return;
     setSending(true);
     setError("");
 
@@ -70,21 +71,39 @@ function RequestChat({ requestId, role }) {
       return;
     }
 
+    let imagePath = null;
+    if (file) {
+      if (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) {
+        setError("Selecciona una imagen válida de máximo 5 MB.");
+        setSending(false);
+        return;
+      }
+      imagePath = `${requestId}/${user.id}/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+      const { error: uploadError } = await supabase.storage.from("chat-images").upload(imagePath, file);
+      if (uploadError) {
+        setError(`No se pudo subir la fotografía: ${uploadError.message}`);
+        setSending(false);
+        return;
+      }
+    }
+
     const { data, error: insertError } = await supabase
       .from("service_messages")
       .insert({
         request_id: requestId,
         sender_id: user.id,
         sender_role: role,
-        message: cleanText,
+        message: cleanText || null,
+        image_path: imagePath,
       })
-      .select("id,sender_id,sender_role,message,created_at")
+      .select("id,sender_id,sender_role,message,image_path,read_at,created_at")
       .single();
 
     if (insertError) setError(`No se pudo enviar el mensaje: ${insertError.message}`);
     else {
       setMessages(previous => previous.some(item => item.id === data.id) ? previous : [...previous, data]);
       setText("");
+      setFile(null);
     }
     setSending(false);
   }
@@ -109,23 +128,34 @@ function RequestChat({ requestId, role }) {
             const mine = item.sender_role === role;
             return <div className={`chat-message ${mine ? "mine" : ""}`} key={item.id}>
               <small>{mine ? "Tú" : item.sender_role === "admin" ? "Administración" : "Cliente"}</small>
-              <p>{item.message}</p><time>{messageTime(item.created_at)}</time>
+              {item.image_path && <ChatImage path={item.image_path}/>}
+              {item.message && <p>{item.message}</p>}<time>{messageTime(item.created_at)}</time>
             </div>;
           })}
         <div ref={endRef}/>
       </div>
       {error && <p className="chat-error">{error}</p>}
       <form className="chat-form" onSubmit={send}>
-        <textarea aria-label="Escribe un mensaje" maxLength={1000} placeholder="Escribe tu mensaje..." value={text} onChange={event => setText(event.target.value)} onKeyDown={event => {
+        <label className="chat-photo-button" title="Enviar fotografía">📷<input type="file" accept="image/*" onChange={event => setFile(event.target.files?.[0] || null)}/></label>
+        <textarea aria-label="Escribe un mensaje" maxLength={1000} placeholder={file ? `Foto seleccionada: ${file.name}` : "Escribe tu mensaje..."} value={text} onChange={event => setText(event.target.value)} onKeyDown={event => {
           if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
             event.currentTarget.form?.requestSubmit();
           }
         }}/>
-        <button type="submit" disabled={sending || !text.trim()}>{sending ? "Enviando..." : "Enviar ➤"}</button>
+        <button type="submit" disabled={sending || (!text.trim() && !file)}>{sending ? "Enviando..." : "Enviar ➤"}</button>
       </form>
     </div>
   );
+}
+
+function ChatImage({ path }) {
+  const [url, setUrl] = useState("");
+  useEffect(() => {
+    supabase.storage.from("chat-images").createSignedUrl(path, 3600)
+      .then(({ data }) => setUrl(data?.signedUrl || ""));
+  }, [path]);
+  return url ? <a href={url} target="_blank" rel="noreferrer"><img className="chat-image" src={url} alt="Fotografía enviada en el chat"/></a> : <span>Cargando fotografía...</span>;
 }
 
 export default RequestChat;

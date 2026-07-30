@@ -42,6 +42,9 @@ ALTER TABLE public.camera_devices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.camera_access_codes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.camera_access_grants ENABLE ROW LEVEL SECURITY;
 
+GRANT SELECT, INSERT, UPDATE ON TABLE public.camera_devices TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE public.camera_devices_id_seq TO authenticated;
+
 DROP POLICY IF EXISTS "Propietario o admin autorizado consulta cámara" ON public.camera_devices;
 CREATE POLICY "Propietario o admin autorizado consulta cámara"
 ON public.camera_devices FOR SELECT TO authenticated

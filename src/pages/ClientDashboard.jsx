@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 import SecurityCenter from "../components/SecurityCenter";
 import RequestChat from "../components/RequestChat";
 import AppointmentScheduler from "../components/AppointmentScheduler";
+import MessageNotifications from "../components/MessageNotifications";
 
 function ClientDashboard() {
   const navigate = useNavigate();
@@ -178,6 +179,9 @@ function ClientDashboard() {
           <button type="button" aria-label="Cerrar notificación" onClick={() => setActualizacion("")}>×</button>
         </div>
       )}
+      {solicitud && <MessageNotifications role="client" onOpen={() => {
+        document.querySelector(".chat-section")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }} />}
 
       {!solicitud ? (
         <section className="empty-request">

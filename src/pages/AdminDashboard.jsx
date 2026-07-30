@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 import RequestChat from "../components/RequestChat";
 import AdminAppointments from "../components/AdminAppointments";
 import AdminCameraAccess from "../components/AdminCameraAccess";
+import MessageNotifications from "../components/MessageNotifications";
 
 const labels = { pending: "Pendiente", contacted: "Contactado", scheduled: "Programado", installed: "Instalado", cancelled: "Cancelado" };
 
@@ -57,6 +58,10 @@ function AdminDashboard() {
         <button className="logout-button" type="button" onClick={logout}>Cerrar sesión</button>
       </header>
       {message && <p className="dashboard-message" role="status">{message}</p>}
+      <MessageNotifications role="admin" onOpen={requestId => {
+        const request = requests.find(item => item.id === requestId);
+        if (request) setChatRequest(request);
+      }} />
       <section className="admin-summary">
         <article className="summary-card"><span>Solicitudes totales</span><b>{requests.length}</b></article>
         <article className="summary-card"><span>Pendientes</span><b>{pending}</b></article>

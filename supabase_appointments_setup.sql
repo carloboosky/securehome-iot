@@ -26,6 +26,9 @@ CREATE TABLE IF NOT EXISTS public.installation_appointments (
 
 ALTER TABLE public.installation_appointments ENABLE ROW LEVEL SECURITY;
 
+GRANT SELECT, INSERT, UPDATE ON TABLE public.installation_appointments TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE public.installation_appointments_id_seq TO authenticated;
+
 CREATE UNIQUE INDEX IF NOT EXISTS unique_active_installation_slot
 ON public.installation_appointments (appointment_date, appointment_time)
 WHERE status <> 'cancelled';
