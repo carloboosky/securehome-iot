@@ -17,6 +17,15 @@ function AdminDashboard() {
   const [cameraRequest, setCameraRequest] = useState(null);
 
   useEffect(() => {
+    if (!chatRequest && !cameraRequest) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [chatRequest, cameraRequest]);
+
+  useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return navigate("/login", { replace: true });
