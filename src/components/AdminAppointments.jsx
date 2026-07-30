@@ -20,6 +20,7 @@ function AdminAppointments({ requests }) {
       supabase
       .from("installation_appointments")
       .select("id,request_id,appointment_date,appointment_time,status")
+      .neq("status", "completed")
       .order("appointment_date")
       .order("appointment_time")
       .then(({ data, error: queryError }) => {
@@ -58,7 +59,9 @@ function AdminAppointments({ requests }) {
       return;
     }
 
-    setAppointments(items => items.map(item => item.id === id ? { ...item, status } : item));
+    setAppointments(items => status === "completed"
+      ? items.filter(item => item.id !== id)
+      : items.map(item => item.id === id ? { ...item, status } : item));
 
     const formattedDate = new Intl.DateTimeFormat("es-EC", {
       dateStyle: "long",

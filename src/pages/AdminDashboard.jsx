@@ -24,15 +24,19 @@ function AdminDashboard() {
   const [chatRequest, setChatRequest] = useState(null);
   const [cameraRequest, setCameraRequest] = useState(null);
   const [unreadByRequest, setUnreadByRequest] = useState({});
+  const [selectedRequestIds, setSelectedRequestIds] = useState([]);
+  const [deleting, setDeleting] = useState(false);
+  const [clientDetails, setClientDetails] = useState(null);
+  const [clientDetailsLoading, setClientDetailsLoading] = useState(false);
 
   useEffect(() => {
-    if (!chatRequest && !cameraRequest) return undefined;
+    if (!chatRequest && !cameraRequest && !clientDetailsLoading && !clientDetails) return undefined;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [chatRequest, cameraRequest]);
+  }, [chatRequest, cameraRequest, clientDetails, clientDetailsLoading]);
 
   useEffect(() => {
     let active = true;
@@ -81,6 +85,21 @@ function AdminDashboard() {
       .is("read_at", null);
   }
 
+  async function openClientDetails(request) {
+    setClientDetailsLoading(true);
+    setClientDetails({ fallback: request });
+    const { data, error } = await supabase.rpc("get_client_registration_details", {
+      target_request_id: request.id,
+    });
+    if (error) {
+      setMessage(`No se pudo cargar toda la ficha: ${error.message}`);
+      setClientDetails({ fallback: request, loadError: true });
+    } else {
+      setClientDetails(data);
+    }
+    setClientDetailsLoading(false);
+  }
+
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
@@ -121,6 +140,38 @@ function AdminDashboard() {
     navigate("/login", { replace: true });
   }
 
+  function toggleRequestSelection(id) {
+    setSelectedRequestIds(ids => ids.includes(id)
+      ? ids.filter(item => item !== id)
+      : [...ids, id]);
+  }
+
+  async function deleteSelectedRequests() {
+    if (selectedRequestIds.length === 0 || deleting) return;
+    const selectedNames = requests
+      .filter(item => selectedRequestIds.includes(item.id))
+      .map(item => item.profiles?.full_name || "Cliente")
+      .join(", ");
+    const confirmed = window.confirm(
+      `¿Eliminar ${selectedRequestIds.length} solicitud(es)?\n\n${selectedNames}\n\nSe borrarán también sus citas, mensajes y configuración de cámara. La cuenta de acceso del usuario se conservará.`
+    );
+    if (!confirmed) return;
+
+    setDeleting(true);
+    setMessage("");
+    const { data: deletedCount, error } = await supabase.rpc("delete_service_requests", {
+      selected_request_ids: selectedRequestIds,
+    });
+    if (error) {
+      setMessage(`No se pudieron eliminar las solicitudes: ${error.message}`);
+    } else {
+      setRequests(items => items.filter(item => !selectedRequestIds.includes(item.id)));
+      setMessage(`${deletedCount} solicitud(es) eliminada(s) del panel.`);
+      setSelectedRequestIds([]);
+    }
+    setDeleting(false);
+  }
+
   const installed = requests.filter(item => item.status === "installed").length;
   const pending = requests.filter(item => !item.status || item.status === "pending").length;
 
@@ -142,15 +193,20 @@ function AdminDashboard() {
       </section>
       <AdminAppointments requests={requests} />
       <section className="admin-table-wrap">
+        {selectedRequestIds.length > 0 && <div className="admin-delete-toolbar">
+          <span><b>{selectedRequestIds.length}</b> cliente(s) seleccionado(s)</span>
+          <button type="button" onClick={deleteSelectedRequests} disabled={deleting}>{deleting ? "Eliminando..." : "Eliminar seleccionados"}</button>
+        </div>}
         {loading ? <div className="dashboard-message">Cargando solicitudes...</div> : requests.length === 0 ? <div className="empty-events"><h3>No hay solicitudes todavía</h3><p>Las nuevas solicitudes aparecerán aquí.</p></div> :
           <table className="admin-table">
-            <thead><tr><th>Cliente</th><th>Plan</th><th>Propiedad</th><th>Dirección</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <thead><tr><th>Cliente</th><th>Plan</th><th>Propiedad</th><th>Dirección</th><th>Fecha</th><th>Estado</th><th>Acciones</th><th className="delete-column"><label className="delete-checkbox" title="Seleccionar todos"><input type="checkbox" checked={requests.length > 0 && selectedRequestIds.length === requests.length} onChange={event => setSelectedRequestIds(event.target.checked ? requests.map(item => item.id) : [])}/><span>✓</span></label></th></tr></thead>
             <tbody>{requests.map(item => <tr key={item.id}>
-              <td><b>{item.profiles?.full_name || "Sin nombre"}</b><br/><small>{item.profiles?.phone || "Sin teléfono"}</small></td>
+              <td><button type="button" className="client-name-button" onClick={() => openClientDetails(item)}><b>{item.profiles?.full_name || "Sin nombre"}</b><small>{item.profiles?.phone || "Sin teléfono"}</small><i>Ver ficha →</i></button></td>
               <td>{item.service_plans?.name || "Sin plan"}</td><td>{item.property_type}</td><td>{item.installation_address}</td>
               <td>{new Intl.DateTimeFormat("es-EC").format(new Date(item.created_at))}</td>
               <td><select aria-label={`Estado de ${item.profiles?.full_name || "cliente"}`} value={item.status || "pending"} onChange={e => updateStatus(item.id, e.target.value)}>{Object.entries(labels).map(([value,label]) => <option value={value} key={value}>{label}</option>)}</select></td>
               <td><div className="table-actions"><button type="button" className="table-chat-button" onClick={() => abrirChat(item)}>Chat{unreadByRequest[item.id] > 0 && <span className="row-unread-badge">{unreadByRequest[item.id] > 99 ? "99+" : unreadByRequest[item.id]}</span>}</button><button type="button" className="table-camera-button" onClick={() => setCameraRequest(item)}>Cámara</button></div></td>
+              <td className="delete-column"><label className="delete-checkbox" title={`Seleccionar a ${item.profiles?.full_name || "cliente"} para eliminar`}><input type="checkbox" checked={selectedRequestIds.includes(item.id)} onChange={() => toggleRequestSelection(item.id)}/><span>✓</span></label></td>
             </tr>)}</tbody>
           </table>}
       </section>
@@ -163,6 +219,39 @@ function AdminDashboard() {
         </section>
       </div>}
       {cameraRequest && <AdminCameraAccess request={cameraRequest} onClose={() => setCameraRequest(null)} />}
+      {clientDetails && <div className="chat-modal-backdrop" role="presentation" onMouseDown={event => {
+        if (event.target === event.currentTarget) setClientDetails(null);
+      }}>
+        <section className="client-profile-modal" role="dialog" aria-modal="true" aria-label="Ficha del cliente">
+          <div className="chat-modal-title"><div><b>Ficha del cliente</b><span>Información proporcionada durante el registro</span></div><button type="button" aria-label="Cerrar ficha" onClick={() => setClientDetails(null)}>×</button></div>
+          {clientDetailsLoading ? <div className="client-profile-loading"><div className="dashboard-loader"/><p>Cargando información...</p></div> : (() => {
+            const fallback = clientDetails.fallback;
+            const details = clientDetails.loadError ? {
+              full_name: fallback?.profiles?.full_name,
+              phone: fallback?.profiles?.phone,
+              plan_name: fallback?.service_plans?.name,
+              property_type: fallback?.property_type,
+              installation_address: fallback?.installation_address,
+              status: fallback?.status,
+              created_at: fallback?.created_at,
+            } : clientDetails;
+            const propertyLabels = { house: "Casa", apartment: "Departamento", business: "Negocio", office: "Oficina" };
+            return <div className="client-profile-body">
+              <div className="client-profile-heading"><span>{details.full_name?.charAt(0).toUpperCase() || "C"}</span><div><h2>{details.full_name || "Cliente sin nombre"}</h2><p>{details.email || "Correo no disponible"}</p></div></div>
+              <div className="client-profile-grid">
+                <div><span>Teléfono</span><b>{details.phone || "No registrado"}</b></div>
+                <div><span>Plan solicitado</span><b>{details.plan_name || "No especificado"}</b></div>
+                <div><span>Tipo de propiedad</span><b>{propertyLabels[details.property_type] || details.property_type || "No especificado"}</b></div>
+                <div><span>Estado</span><b>{labels[details.status] || details.status || "Pendiente"}</b></div>
+                <div className="wide"><span>Dirección de instalación</span><b>{details.installation_address || "No registrada"}</b></div>
+                <div className="wide"><span>Fecha de registro</span><b>{details.created_at ? new Intl.DateTimeFormat("es-EC", { dateStyle: "long", timeStyle: "short" }).format(new Date(details.created_at)) : "No disponible"}</b></div>
+              </div>
+              <div className="client-household-details"><span>Datos del hogar e información adicional</span><pre>{details.notes || "No se proporcionaron detalles adicionales."}</pre></div>
+              <p className="password-privacy-note">🔒 La contraseña nunca se muestra ni se almacena como texto visible.</p>
+            </div>;
+          })()}
+        </section>
+      </div>}
     </main>
   );
 }

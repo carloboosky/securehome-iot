@@ -409,6 +409,34 @@ input:focus,select:focus,textarea:focus { border-color:var(--blue); box-shadow:0
 .admin-table th,.admin-table td { padding:15px 18px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
 .admin-table th { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.7px; }
 .admin-table select { min-width:140px; padding:8px; }
+.client-name-button { display:grid; gap:2px; padding:0; border:0; color:var(--navy); background:transparent; cursor:pointer; text-align:left; }
+.client-name-button small { color:var(--muted); }
+.client-name-button i { margin-top:3px; color:var(--blue); font-size:9px; font-style:normal; font-weight:800; opacity:0; transition:.15s; }
+.client-name-button:hover i { opacity:1; }
+.admin-delete-toolbar { position:sticky; left:0; display:flex; align-items:center; justify-content:space-between; gap:15px; padding:12px 18px; color:#7d2630; background:#fff1f2; border-bottom:1px solid #ffd2d7; }
+.admin-delete-toolbar span { font-size:12px; }
+.admin-delete-toolbar button { padding:9px 13px; border:0; border-radius:8px; color:white; background:#d93648; cursor:pointer; font-weight:800; }
+.admin-delete-toolbar button:disabled { opacity:.6; cursor:not-allowed; }
+.admin-table .delete-column { width:58px; min-width:58px; padding-left:10px; padding-right:10px; text-align:center; }
+.delete-checkbox { display:inline-grid; place-items:center; cursor:pointer; }
+.delete-checkbox input { position:absolute; opacity:0; pointer-events:none; }
+.delete-checkbox span { width:25px; height:25px; display:grid; place-items:center; border:2px solid #d2dbe8; border-radius:7px; color:transparent; background:white; font-size:11px; transition:.15s; }
+.delete-checkbox input:checked + span { border-color:#dc3547; color:white; background:#dc3547; }
+.client-profile-modal { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:min(720px,calc(100% - 30px)); max-height:calc(100vh - 30px); overflow:hidden; border-radius:19px; background:#f7f9fc; box-shadow:0 30px 90px rgba(0,0,0,.35); }
+.client-profile-body { max-height:calc(100vh - 100px); overflow:auto; padding:24px; }
+.client-profile-loading { min-height:300px; display:grid; place-content:center; justify-items:center; color:var(--muted); }
+.client-profile-heading { display:flex; align-items:center; gap:14px; margin-bottom:20px; }
+.client-profile-heading > span { width:54px; height:54px; display:grid; place-items:center; border-radius:15px; color:white; background:linear-gradient(135deg,var(--blue),#174eb8); font:800 23px "Manrope"; }
+.client-profile-heading h2 { margin:0 0 3px; color:var(--navy); font:800 22px "Manrope"; }
+.client-profile-heading p { margin:0; color:var(--muted); font-size:12px; }
+.client-profile-grid { display:grid; grid-template-columns:1fr 1fr; gap:11px; }
+.client-profile-grid > div { display:grid; gap:5px; padding:14px; border:1px solid var(--line); border-radius:11px; background:white; }
+.client-profile-grid .wide { grid-column:1/-1; }
+.client-profile-grid span,.client-household-details > span { color:var(--muted); font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.7px; }
+.client-profile-grid b { color:#26344e; font-size:13px; }
+.client-household-details { display:grid; gap:8px; margin-top:12px; padding:15px; border:1px solid #dce6f6; border-radius:12px; background:white; }
+.client-household-details pre { margin:0; color:#3e4c64; font:12px/1.65 "DM Sans",sans-serif; white-space:pre-wrap; overflow-wrap:anywhere; }
+.password-privacy-note { margin:13px 0 0; padding:11px 13px; border-radius:9px; color:#376353; background:#eaf8f4; font-size:11px; }
 
 @media(max-width:1000px) {
   .navbar { gap:18px; }.navbar nav { gap:18px; }.nav-buttons .btn-ghost { display:none; }
