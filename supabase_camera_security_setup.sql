@@ -95,12 +95,6 @@ BEGIN
   IF NOT public.is_admin() THEN
     RAISE EXCEPTION 'No autorizado';
   END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM public.camera_devices WHERE request_id = target_request_id
-  ) THEN
-    RAISE EXCEPTION 'La cámara todavía no está configurada';
-  END IF;
-
   generated_code := lpad(floor(random() * 1000000)::int::text, 6, '0');
   UPDATE public.camera_access_codes
     SET used_at = now(), display_code = NULL
@@ -109,7 +103,7 @@ BEGIN
     (request_id, code_hash, display_code, expires_at)
   VALUES (
     target_request_id,
-    encode(digest(generated_code, 'sha256'), 'hex'),
+    encode(extensions.digest(generated_code, 'sha256'), 'hex'),
     generated_code,
     now() + interval '5 minutes'
   );
@@ -166,7 +160,7 @@ BEGIN
     SET used_at = now()
     WHERE request_id = target_request_id AND used_at IS NULL;
   INSERT INTO public.camera_access_codes (request_id, code_hash, display_code, expires_at)
-    VALUES (target_request_id, encode(digest(generated_code, 'sha256'), 'hex'), generated_code, now() + interval '5 minutes');
+    VALUES (target_request_id, encode(extensions.digest(generated_code, 'sha256'), 'hex'), generated_code, now() + interval '5 minutes');
   RETURN generated_code;
 END;
 $$;
@@ -187,7 +181,10 @@ BEGIN
   SELECT id INTO matched_id
   FROM public.camera_access_codes
   WHERE request_id = target_request_id
-    AND code_hash = encode(digest(plain_code, 'sha256'), 'hex')
+    AND (
+      display_code = trim(plain_code)
+      OR code_hash = encode(extensions.digest(trim(plain_code), 'sha256'), 'hex')
+    )
     AND used_at IS NULL
     AND expires_at > now()
   ORDER BY created_at DESC

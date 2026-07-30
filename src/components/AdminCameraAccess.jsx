@@ -7,6 +7,7 @@ function AdminCameraAccess({ request, onClose }) {
   const [videoUrl, setVideoUrl] = useState("");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [accessGranted, setAccessGranted] = useState(false);
 
   async function requestAccess() {
     setSaving(true);
@@ -47,21 +48,28 @@ function AdminCameraAccess({ request, onClose }) {
       plain_code: code,
     });
     if (error || !allowed) {
-      setMessage("El código es incorrecto, ya fue usado o caducó.");
+      setMessage(
+        error
+          ? `No se pudo validar el código: ${error.message}`
+          : "El código es incorrecto, ya fue usado, fue reemplazado o caducó."
+      );
       setSaving(false);
       return;
     }
     const { data: camera, error: cameraError } = await supabase.from("camera_devices")
       .select("stream_url").eq("request_id", request.id).maybeSingle();
-    if (cameraError || !camera) setMessage("No hay una cámara configurada para esta solicitud.");
-    else {
+    setAccessGranted(true);
+    if (cameraError || !camera) {
+      setMessage("Acceso autorizado durante 5 minutos. La cámara todavía no está configurada.");
+    } else {
       setVideoUrl(camera.stream_url);
       setMessage("Acceso autorizado durante 5 minutos.");
-      window.setTimeout(() => {
-        setVideoUrl("");
-        setMessage("El permiso temporal para ver la cámara ha caducado.");
-      }, 5 * 60 * 1000);
     }
+    window.setTimeout(() => {
+      setVideoUrl("");
+      setAccessGranted(false);
+      setMessage("El permiso temporal para ver la cámara ha caducado.");
+    }, 5 * 60 * 1000);
     setSaving(false);
   }
 
@@ -85,6 +93,7 @@ function AdminCameraAccess({ request, onClose }) {
           </article>
           {message && <p className="appointment-message">{message}</p>}
           {videoUrl && <div className="admin-camera-view"><img src={videoUrl} alt="Transmisión temporal autorizada por el cliente"/></div>}
+          {accessGranted && !videoUrl && <div className="admin-camera-view empty"><div><span>📷</span><b>Acceso autorizado</b><p>Cámara pendiente de configuración o conexión.</p></div></div>}
         </div>
       </section>
     </div>
