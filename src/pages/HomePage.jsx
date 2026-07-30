@@ -11,9 +11,9 @@ const services = [
 ];
 
 const plans = [
-  { name: "Esencial", price: "24", text: "Vigilancia básica para espacios pequeños", features: ["1 cámara HD", "1 sensor de movimiento", "Monitoreo desde el móvil"] },
-  { name: "Protección Plus", price: "39", text: "Más cobertura mediante sensores adicionales", features: ["1 cámara HD", "3 sensores de movimiento", "Alertas por Telegram"], featured: true },
-  { name: "Total", price: "59", text: "El sistema completo con más puntos de detección", features: ["1 cámara HD", "5 sensores de movimiento", "Telegram + acceso NFC"] },
+  { name: "Esencial", text: "Vigilancia básica para espacios pequeños", features: ["1 cámara HD", "1 sensor de movimiento", "Monitoreo desde el móvil"] },
+  { name: "Protección Plus", text: "Más cobertura mediante sensores adicionales", features: ["1 cámara HD", "3 sensores de movimiento", "Alertas por Telegram"], featured: true },
+  { name: "Total", text: "El sistema completo con más puntos de detección", features: ["1 cámara HD", "5 sensores de movimiento", "Telegram + acceso NFC"] },
 ];
 
 function Icon({ name }) {
@@ -111,7 +111,7 @@ function HomePage() {
           <div className="plan-grid">
             {plans.map(plan => <article className={`plan-card ${plan.featured ? "featured" : ""}`} key={plan.name}>
               {plan.featured && <span className="popular">Más elegido</span>}
-              <h3>{plan.name}</h3><p>{plan.text}</p><div className="price"><small>Desde</small><b>${plan.price}</b><span>/mes</span></div>
+              <h3>{plan.name}</h3><p>{plan.text}</p>
               <ul>{plan.features.map(feature => <li key={feature}><Icon name="check"/>{feature}</li>)}</ul>
               <Link className={`btn-link ${plan.featured ? "btn-primary" : "btn-outline"}`} to="/registro">Elegir plan</Link>
             </article>)}
