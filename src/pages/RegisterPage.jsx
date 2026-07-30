@@ -16,10 +16,10 @@ function RegisterPage() {
     planId: "",
     tipoPropiedad: "house",
     direccion: "",
-    cantidadNinos: "0",
     cantidadMascotas: "0",
-    cantidadGatos: "0",
-    tamanoPerro: "none",
+    tamanoMascotas: "none",
+    integrantesHogar: "1",
+    menoresTrece: "0",
     notas: "",
   });
 
@@ -65,6 +65,12 @@ function RegisterPage() {
       if (!valor.trim()) return "La dirección de instalación es obligatoria.";
       if (valor.trim().length < 8) return "Escribe una dirección más completa.";
     }
+    if (name === "integrantesHogar" && Number(valor) < 1) {
+      return "Debe existir al menos un integrante.";
+    }
+    if (name === "menoresTrece" && Number(valor) > Number(datos.integrantesHogar)) {
+      return "Los menores no pueden superar el total de integrantes.";
+    }
     return "";
   }
 
@@ -107,6 +113,9 @@ function RegisterPage() {
       };
       if (name === "password" && siguienteFormulario.confirmarPassword) {
         siguientes.confirmarPassword = validarCampo("confirmarPassword", siguienteFormulario);
+      }
+      if (name === "integrantesHogar") {
+        siguientes.menoresTrece = validarCampo("menoresTrece", siguienteFormulario);
       }
       return siguientes;
     });
@@ -205,6 +214,19 @@ function RegisterPage() {
         "Escribe una dirección más completa.";
     }
 
+    if (Number(formulario.integrantesHogar) < 1) {
+      nuevosErrores.integrantesHogar =
+        "Debe existir al menos un integrante.";
+    }
+
+    if (
+      Number(formulario.menoresTrece) >
+      Number(formulario.integrantesHogar)
+    ) {
+      nuevosErrores.menoresTrece =
+        "Los menores no pueden superar el total de integrantes.";
+    }
+
     setErrores(nuevosErrores);
 
     return Object.keys(nuevosErrores).length === 0;
@@ -299,11 +321,11 @@ function RegisterPage() {
         property_type: formulario.tipoPropiedad,
         installation_address: formulario.direccion.trim(),
         notes: [
-          "DATOS DEL HOGAR",
-          `Niños: ${formulario.cantidadNinos}`,
+        "DATOS DEL HOGAR",
+          `Integrantes del hogar: ${formulario.integrantesHogar}`,
+          `Menores de 13 años: ${formulario.menoresTrece}`,
           `Mascotas: ${formulario.cantidadMascotas}`,
-          `Gatos: ${formulario.cantidadGatos}`,
-          `Tamaño de perro: ${{ none: "No tiene", small: "Pequeño", medium: "Mediano", large: "Grande" }[formulario.tamanoPerro]}`,
+          `Tamaño de mascotas: ${{ none: "No tiene", small: "Pequeño", medium: "Mediano", large: "Grande", mixed: "Varios tamaños" }[formulario.tamanoMascotas]}`,
           formulario.notas.trim()
             ? `Información adicional: ${formulario.notas.trim()}`
             : "",
@@ -519,24 +541,27 @@ function RegisterPage() {
             <legend>Personas y mascotas en el hogar</legend>
             <div>
               <label>
-                Cantidad de niños
-                <input type="number" name="cantidadNinos" min="0" max="20" value={formulario.cantidadNinos} onChange={manejarCambio} />
+                Integrantes del hogar
+                <input type="number" name="integrantesHogar" min="1" max="30" value={formulario.integrantesHogar} onChange={manejarCambio} className={errores.integrantesHogar ? "input-error" : ""} />
+                {errores.integrantesHogar && <span className="field-error">{errores.integrantesHogar}</span>}
               </label>
               <label>
-                Total de mascotas
+                Menores de 13 años
+                <input type="number" name="menoresTrece" min="0" max="30" value={formulario.menoresTrece} onChange={manejarCambio} className={errores.menoresTrece ? "input-error" : ""} />
+                {errores.menoresTrece && <span className="field-error">{errores.menoresTrece}</span>}
+              </label>
+              <label>
+                Cantidad de mascotas
                 <input type="number" name="cantidadMascotas" min="0" max="20" value={formulario.cantidadMascotas} onChange={manejarCambio} />
               </label>
               <label>
-                Cantidad de gatos
-                <input type="number" name="cantidadGatos" min="0" max="20" value={formulario.cantidadGatos} onChange={manejarCambio} />
-              </label>
-              <label>
-                Tamaño del perro
-                <select name="tamanoPerro" value={formulario.tamanoPerro} onChange={manejarCambio}>
-                  <option value="none">No tiene perro</option>
+                Tamaño de las mascotas
+                <select name="tamanoMascotas" value={formulario.tamanoMascotas} onChange={manejarCambio}>
+                  <option value="none">No tiene mascotas</option>
                   <option value="small">Pequeño</option>
                   <option value="medium">Mediano</option>
                   <option value="large">Grande</option>
+                  <option value="mixed">Varios tamaños</option>
                 </select>
               </label>
             </div>

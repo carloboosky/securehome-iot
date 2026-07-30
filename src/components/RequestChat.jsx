@@ -20,7 +20,11 @@ function RequestChat({ requestId, role }) {
         .order("created_at", { ascending: true });
 
       if (!active) return;
-      if (queryError) setError("El chat todavía no está configurado en Supabase.");
+      if (queryError) {
+        setError(
+          `El chat no está disponible: ${queryError.message}`
+        );
+      }
       else setMessages(data || []);
       setLoading(false);
     }

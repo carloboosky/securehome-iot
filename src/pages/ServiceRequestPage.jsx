@@ -15,10 +15,10 @@ function ServiceRequestPage() {
     planId: "",
     propertyType: "house",
     address: "",
-    childrenCount: "0",
     petCount: "0",
-    catCount: "0",
-    dogSize: "none",
+    petSize: "none",
+    householdMembers: "1",
+    under13Count: "0",
     notes: "",
   });
 
@@ -54,7 +54,15 @@ function ServiceRequestPage() {
     const { name, value } = event.target;
     const cleanValue = name === "phone" ? value.replace(/\D/g, "").slice(0, 10) : value;
     setForm(previous => ({ ...previous, [name]: cleanValue }));
-    setErrors(previous => ({ ...previous, [name]: "" }));
+    setErrors(previous => ({
+      ...previous,
+      [name]: "",
+      ...(name === "householdMembers" ? {
+        under13Count: Number(form.under13Count) > Number(cleanValue)
+          ? "Los menores no pueden superar el total de integrantes."
+          : "",
+      } : {}),
+    }));
   }
 
   async function submit(event) {
@@ -63,6 +71,8 @@ function ServiceRequestPage() {
     if (!/^09\d{8}$/.test(form.phone)) nextErrors.phone = "Ingresa un celular ecuatoriano válido de 10 dígitos.";
     if (!form.planId) nextErrors.planId = "Selecciona un plan.";
     if (form.address.trim().length < 8) nextErrors.address = "Escribe una dirección más completa.";
+    if (Number(form.householdMembers) < 1) nextErrors.householdMembers = "Debe existir al menos un integrante.";
+    if (Number(form.under13Count) > Number(form.householdMembers)) nextErrors.under13Count = "Los menores no pueden superar el total de integrantes.";
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) {
       setMessage("Revisa los campos marcados antes de continuar.");
@@ -85,10 +95,10 @@ function ServiceRequestPage() {
       installation_address: form.address.trim(),
       notes: [
         "DATOS DEL HOGAR",
-        `Niños: ${form.childrenCount}`,
+        `Integrantes del hogar: ${form.householdMembers}`,
+        `Menores de 13 años: ${form.under13Count}`,
         `Mascotas: ${form.petCount}`,
-        `Gatos: ${form.catCount}`,
-        `Tamaño de perro: ${{ none: "No tiene", small: "Pequeño", medium: "Mediano", large: "Grande" }[form.dogSize]}`,
+        `Tamaño de mascotas: ${{ none: "No tiene", small: "Pequeño", medium: "Mediano", large: "Grande", mixed: "Varios tamaños" }[form.petSize]}`,
         form.notes.trim() ? `Información adicional: ${form.notes.trim()}` : "",
       ].filter(Boolean).join("\n"),
       status: "pending",
@@ -134,18 +144,20 @@ function ServiceRequestPage() {
           <fieldset className="household-fields">
             <legend>Personas y mascotas en el hogar</legend>
             <div>
-              <label>Cantidad de niños
-                <input type="number" name="childrenCount" min="0" max="20" value={form.childrenCount} onChange={change}/>
+              <label>Integrantes del hogar
+                <input type="number" name="householdMembers" min="1" max="30" value={form.householdMembers} onChange={change} className={errors.householdMembers ? "input-error" : ""}/>
+                {errors.householdMembers && <span className="field-error">{errors.householdMembers}</span>}
               </label>
-              <label>Total de mascotas
+              <label>Menores de 13 años
+                <input type="number" name="under13Count" min="0" max="30" value={form.under13Count} onChange={change} className={errors.under13Count ? "input-error" : ""}/>
+                {errors.under13Count && <span className="field-error">{errors.under13Count}</span>}
+              </label>
+              <label>Cantidad de mascotas
                 <input type="number" name="petCount" min="0" max="20" value={form.petCount} onChange={change}/>
               </label>
-              <label>Cantidad de gatos
-                <input type="number" name="catCount" min="0" max="20" value={form.catCount} onChange={change}/>
-              </label>
-              <label>Tamaño del perro
-                <select name="dogSize" value={form.dogSize} onChange={change}>
-                  <option value="none">No tiene perro</option><option value="small">Pequeño</option><option value="medium">Mediano</option><option value="large">Grande</option>
+              <label>Tamaño de las mascotas
+                <select name="petSize" value={form.petSize} onChange={change}>
+                  <option value="none">No tiene mascotas</option><option value="small">Pequeño</option><option value="medium">Mediano</option><option value="large">Grande</option><option value="mixed">Varios tamaños</option>
                 </select>
               </label>
             </div>
