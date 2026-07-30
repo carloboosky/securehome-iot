@@ -25,13 +25,10 @@ function AdminCameraAccess({ request, onClose }) {
       return;
     }
     setSaving(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase.from("camera_devices").upsert({
-      request_id: request.id,
-      stream_url: streamUrl.trim(),
-      configured_by: user.id,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "request_id" });
+    const { error } = await supabase.rpc("configure_camera_device", {
+      target_request_id: request.id,
+      target_stream_url: streamUrl.trim(),
+    });
     setMessage(error ? `No se pudo configurar: ${error.message}` : "Cámara configurada. La dirección permanece protegida.");
     if (!error) setStreamUrl("");
     setSaving(false);

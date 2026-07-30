@@ -65,6 +65,25 @@ GRANT SELECT, INSERT, UPDATE ON TABLE public.camera_devices TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE public.camera_devices_id_seq TO authenticated;
 GRANT SELECT ON TABLE public.camera_access_codes TO authenticated;
 
+CREATE OR REPLACE FUNCTION public.has_active_camera_access(target_request_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.camera_access_grants
+    WHERE request_id = target_request_id
+      AND admin_id = auth.uid()
+      AND expires_at > now()
+  );
+$$;
+
+REVOKE ALL ON FUNCTION public.has_active_camera_access(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.has_active_camera_access(uuid) TO authenticated;
+
 DROP POLICY IF EXISTS "Cliente recibe códigos de su cámara" ON public.camera_access_codes;
 CREATE POLICY "Cliente recibe códigos de su cámara"
 ON public.camera_access_codes FOR SELECT TO authenticated
@@ -115,17 +134,8 @@ DROP POLICY IF EXISTS "Propietario o admin autorizado consulta cámara" ON publi
 CREATE POLICY "Propietario o admin autorizado consulta cámara"
 ON public.camera_devices FOR SELECT TO authenticated
 USING (
-  EXISTS (
-    SELECT 1 FROM public.service_requests
-    WHERE service_requests.id = camera_devices.request_id
-      AND service_requests.client_id = auth.uid()
-  )
-  OR EXISTS (
-    SELECT 1 FROM public.camera_access_grants
-    WHERE camera_access_grants.request_id = camera_devices.request_id
-      AND camera_access_grants.admin_id = auth.uid()
-      AND camera_access_grants.expires_at > now()
-  )
+  public.owns_service_request(request_id)
+  OR public.has_active_camera_access(request_id)
 );
 
 DROP POLICY IF EXISTS "Admin configura cámara" ON public.camera_devices;
@@ -138,6 +148,55 @@ CREATE POLICY "Admin actualiza cámara"
 ON public.camera_devices FOR UPDATE TO authenticated
 USING (public.is_admin())
 WITH CHECK (public.is_admin() AND configured_by = auth.uid());
+
+CREATE OR REPLACE FUNCTION public.configure_camera_device(
+  target_request_id uuid,
+  target_stream_url text
+)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'No autorizado';
+  END IF;
+
+  IF target_stream_url IS NULL OR target_stream_url !~ '^https://' THEN
+    RAISE EXCEPTION 'La transmisión debe utilizar HTTPS';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.service_requests
+    WHERE id = target_request_id
+  ) THEN
+    RAISE EXCEPTION 'La solicitud no existe';
+  END IF;
+
+  INSERT INTO public.camera_devices (
+    request_id,
+    stream_url,
+    configured_by,
+    updated_at
+  )
+  VALUES (
+    target_request_id,
+    trim(target_stream_url),
+    auth.uid(),
+    now()
+  )
+  ON CONFLICT (request_id) DO UPDATE
+  SET stream_url = EXCLUDED.stream_url,
+      configured_by = auth.uid(),
+      updated_at = now();
+
+  RETURN true;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.configure_camera_device(uuid, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.configure_camera_device(uuid, text) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.create_camera_access_code(target_request_id uuid)
 RETURNS text
@@ -210,8 +269,10 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.create_camera_access_code(uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.configure_camera_device(uuid, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.request_camera_access(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.redeem_camera_access_code(uuid, text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.create_camera_access_code(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.configure_camera_device(uuid, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.request_camera_access(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.redeem_camera_access_code(uuid, text) TO authenticated;

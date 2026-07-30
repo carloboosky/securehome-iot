@@ -74,6 +74,28 @@ function SecurityCenter({ requestId }) {
   }, [config, storageKey]);
 
   useEffect(() => {
+    let active = true;
+
+    supabase
+      .from("camera_devices")
+      .select("stream_url")
+      .eq("request_id", requestId)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (error) {
+          setNotice("No se pudo cargar la dirección configurada de la cámara.");
+          return;
+        }
+        setCameraUrl(data?.stream_url || CAMERA_STREAM_URL);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [requestId]);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function initializeDetector() {
@@ -209,7 +231,9 @@ function SecurityCenter({ requestId }) {
       window.clearTimeout(retryTimeoutRef.current);
     }
     retryTimeoutRef.current = window.setTimeout(() => {
-      setCameraUrl(`${CAMERA_STREAM_URL}?t=${Date.now()}`);
+      const retryUrl = new URL(cameraUrl);
+      retryUrl.searchParams.set("t", Date.now().toString());
+      setCameraUrl(retryUrl.toString());
       retryTimeoutRef.current = null;
     }, 3000);
   }
