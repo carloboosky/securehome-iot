@@ -3,16 +3,16 @@ import { Link } from "react-router-dom";
 import heroImage from "../assets/hero.png";
 
 const services = [
-  ["camera", "Monitoreo en vivo", "Visualiza tus cámaras en alta definición desde cualquier lugar y en cualquier momento."],
+  ["camera", "Monitoreo en vivo", "Visualiza la cámara de seguridad en alta definición desde cualquier lugar y en cualquier momento."],
   ["sensor", "Detección inteligente", "Sensores que identifican actividad inusual y reducen falsas alarmas."],
   ["bell", "Alertas al instante", "Recibe fotografías y avisos en Telegram cuando ocurre un evento importante."],
   ["key", "Acceso NFC", "Controla el armado y desarmado mediante tarjetas seguras y fáciles de administrar."],
 ];
 
 const plans = [
-  { name: "Esencial", price: "24", text: "Para departamentos y espacios pequeños", features: ["1 cámara HD", "2 sensores", "Alertas Telegram"] },
-  { name: "Protección Plus", price: "39", text: "La protección ideal para tu hogar", features: ["2 cámaras HD", "4 sensores", "NFC + Telegram"], featured: true },
-  { name: "Total", price: "59", text: "Cobertura completa para hogares y negocios", features: ["4 cámaras HD", "8 sensores", "Soporte prioritario"] },
+  { name: "Esencial", price: "24", text: "Vigilancia básica para espacios pequeños", features: ["1 cámara HD", "1 sensor de movimiento", "Monitoreo desde el móvil"] },
+  { name: "Protección Plus", price: "39", text: "Más cobertura mediante sensores adicionales", features: ["1 cámara HD", "3 sensores de movimiento", "Alertas por Telegram"], featured: true },
+  { name: "Total", price: "59", text: "El sistema completo con más puntos de detección", features: ["1 cámara HD", "5 sensores de movimiento", "Telegram + acceso NFC"] },
 ];
 
 function Icon({ name }) {
@@ -56,7 +56,7 @@ function HomePage() {
           <div className="hero-copy">
             <span className="eyebrow"><i/> Seguridad inteligente 24/7</span>
             <h1>Tu hogar seguro.<br/><span>Siempre conectado.</span></h1>
-            <p>Protección inteligente con cámaras, sensores y alertas instantáneas. Controla todo desde donde estés.</p>
+            <p>Protección inteligente con una cámara, sensores de movimiento y alertas instantáneas por Telegram. Controla todo desde donde estés.</p>
             <div className="hero-actions">
               <Link className="btn-link btn-primary btn-large" to="/registro">Solicitar instalación <span>→</span></Link>
               <a className="btn-link btn-light btn-large" href="#servicios">Conocer el sistema</a>

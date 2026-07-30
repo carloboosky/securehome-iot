@@ -53,8 +53,7 @@ function ClientDashboard() {
             notes,
             created_at,
             service_plans(
-            name,
-            price
+            name
             )
           `)
           .eq("client_id", user.id)
@@ -204,11 +203,6 @@ function ClientDashboard() {
                   "Plan no especificado"}
               </p>
 
-              {solicitud.service_plans?.price != null && (
-                <strong>
-                  ${Number(solicitud.service_plans.price).toFixed(2)}
-                </strong>
-              )}
             </article>
 
             <article className="dashboard-card">

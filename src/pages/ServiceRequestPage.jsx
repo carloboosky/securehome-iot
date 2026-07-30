@@ -30,7 +30,7 @@ function ServiceRequestPage() {
         await Promise.all([
           supabase.from("service_requests").select("id").eq("client_id", currentUser.id).limit(1).maybeSingle(),
           supabase.from("profiles").select("phone").eq("id", currentUser.id).maybeSingle(),
-          supabase.from("service_plans").select("id,name,price").order("id"),
+          supabase.from("service_plans").select("id,name").order("id"),
         ]);
 
       if (request) {
@@ -107,7 +107,7 @@ function ServiceRequestPage() {
           <label>Plan de seguridad
             <select name="planId" value={form.planId} onChange={change} className={errors.planId ? "input-error" : ""}>
               <option value="">Selecciona un plan</option>
-              {plans.map(plan => <option value={plan.id} key={plan.id}>{plan.name}{plan.price != null ? ` — $${Number(plan.price).toFixed(2)}` : ""}</option>)}
+              {plans.map(plan => <option value={plan.id} key={plan.id}>{plan.name}</option>)}
             </select>
             {errors.planId && <span className="field-error">{errors.planId}</span>}
           </label>
