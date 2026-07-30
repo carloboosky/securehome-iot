@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { FilesetResolver, ObjectDetector } from "@mediapipe/tasks-vision";
 import { supabase } from "../lib/supabase";
 
-const CAMERA_STREAM_URL = "https://iot-security.pro/api/camera/stream";
 const ALERTS_URL = "https://iot-security.pro/api/alerts";
 const ALERT_COOLDOWN_MS = 30_000;
 
@@ -49,7 +48,7 @@ function SecurityCenter({ requestId }) {
       return defaultConfig;
     }
   });
-  const [cameraUrl, setCameraUrl] = useState(CAMERA_STREAM_URL);
+  const [cameraUrl, setCameraUrl] = useState("");
   const [cameraOnline, setCameraOnline] = useState(false);
   const [scheduleDraft, setScheduleDraft] = useState(() => ({
     mode: config.mode,
@@ -88,7 +87,7 @@ function SecurityCenter({ requestId }) {
           setNotice("No se pudo cargar la dirección configurada de la cámara.");
           return;
         }
-        setCameraUrl(data?.stream_url || CAMERA_STREAM_URL);
+        setCameraUrl(data?.stream_url || "");
       });
 
     return () => {
@@ -374,23 +373,25 @@ function SecurityCenter({ requestId }) {
           <div className="camera-topbar">
             <div><i className={cameraOnline ? "online" : ""}/><b>Cámara principal</b></div>
             <div className="camera-topbar-actions">
-              <span>{cameraOnline ? "EN VIVO" : "CONECTANDO"}</span>
-              <button type="button" className="fullscreen-button" onClick={openCameraFullscreen} aria-label="Ver cámara en pantalla completa">⛶ Pantalla completa</button>
+              <span>{cameraOnline ? "EN VIVO" : cameraUrl ? "CONECTANDO" : "SIN CONFIGURAR"}</span>
+              {cameraUrl && <button type="button" className="fullscreen-button" onClick={openCameraFullscreen} aria-label="Ver cámara en pantalla completa">⛶ Pantalla completa</button>}
             </div>
           </div>
           <div className="camera-screen">
-            <img
-              ref={imgRef}
-              crossOrigin="anonymous"
-              src={cameraUrl}
-              alt="Transmisión en vivo de la cámara de seguridad"
-              onLoad={() => {
-                setCameraOnline(true);
-                setNotice("");
-              }}
-              onError={retryCameraStream}
-            />
-            <canvas ref={canvasRef} aria-hidden="true" />
+            {cameraUrl ? <>
+              <img
+                ref={imgRef}
+                crossOrigin="anonymous"
+                src={cameraUrl}
+                alt="Transmisión en vivo de la cámara de seguridad"
+                onLoad={() => {
+                  setCameraOnline(true);
+                  setNotice("");
+                }}
+                onError={retryCameraStream}
+              />
+              <canvas ref={canvasRef} aria-hidden="true" />
+            </> : <div className="camera-placeholder"><span>📷</span><b>Cámara pendiente de configuración</b><p>El administrador debe asignar una dirección de cámara exclusiva a tu solicitud.</p></div>}
           </div>
           <div className="camera-permission">
             <div><b>Acceso temporal para soporte</b><span>El administrador debe solicitar acceso. Recibirás un código nuevo que caduca en 5 minutos.</span></div>

@@ -1,8 +1,6 @@
 import { useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-const DEFAULT_CAMERA_URL = "https://iot-security.pro/api/camera/stream";
-
 function AdminCameraAccess({ request, onClose }) {
   const [streamUrl, setStreamUrl] = useState("");
   const [code, setCode] = useState("");
@@ -67,12 +65,10 @@ function AdminCameraAccess({ request, onClose }) {
     const { data: camera, error: cameraError } = await supabase.from("camera_devices")
       .select("stream_url").eq("request_id", request.id).maybeSingle();
     setAccessGranted(true);
-    setVideoUrl(camera?.stream_url || DEFAULT_CAMERA_URL);
-    setMessage(
-      cameraError || !camera
-        ? "Acceso autorizado durante 5 minutos. Mostrando la cámara principal de AWS."
-        : "Acceso autorizado durante 5 minutos."
-    );
+    setVideoUrl(camera?.stream_url || "");
+    setMessage(cameraError || !camera
+      ? "Acceso autorizado durante 5 minutos. Este cliente todavía no tiene una dirección de cámara configurada."
+      : "Acceso autorizado durante 5 minutos.");
     window.setTimeout(() => {
       setVideoUrl("");
       setAccessGranted(false);
