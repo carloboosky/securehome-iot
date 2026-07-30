@@ -14,7 +14,9 @@ function AdminAppointments() {
       .order("appointment_time")
       .then(({ data, error: queryError }) => {
         if (!active) return;
-        if (queryError) setError("Ejecuta la configuración SQL para activar el agendamiento.");
+        if (queryError) {
+          setError(`No se pudo cargar la agenda: ${queryError.message}`);
+        }
         else setAppointments(data || []);
       });
     return () => { active = false; };

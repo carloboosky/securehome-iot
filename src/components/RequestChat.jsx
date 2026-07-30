@@ -8,7 +8,7 @@ function RequestChat({ requestId, role }) {
   const [sending, setSending] = useState(false);
   const [file, setFile] = useState(null);
   const [error, setError] = useState("");
-  const endRef = useRef(null);
+  const messagesRef = useRef(null);
 
   useEffect(() => {
     let active = true;
@@ -54,7 +54,13 @@ function RequestChat({ requestId, role }) {
   }, [requestId]);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = messagesRef.current;
+    if (container) {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: "smooth",
+      });
+    }
   }, [messages]);
 
   async function send(event) {
@@ -121,7 +127,7 @@ function RequestChat({ requestId, role }) {
         <div><span>💬</span><div><h3>Chat de soporte</h3><p>Conversación entre cliente y administración</p></div></div>
         <span className="chat-online"><i/> En línea</span>
       </div>
-      <div className="chat-messages" aria-live="polite">
+      <div className="chat-messages" aria-live="polite" ref={messagesRef}>
         {loading ? <p className="chat-empty">Cargando conversación...</p> :
           messages.length === 0 ? <div className="chat-empty"><span>👋</span><b>Inicia la conversación</b><p>Escribe un mensaje sobre la instalación o el sistema.</p></div> :
           messages.map(item => {
@@ -132,7 +138,6 @@ function RequestChat({ requestId, role }) {
               {item.message && <p>{item.message}</p>}<time>{messageTime(item.created_at)}</time>
             </div>;
           })}
-        <div ref={endRef}/>
       </div>
       {error && <p className="chat-error">{error}</p>}
       <form className="chat-form" onSubmit={send}>

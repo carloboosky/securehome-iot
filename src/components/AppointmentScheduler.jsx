@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { isAvailableInstallationDate, todayIso } from "../lib/ecuadorHolidays";
+import { isAvailableInstallationDate } from "../lib/ecuadorHolidays";
 
 const slots = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00"];
 
@@ -11,6 +11,21 @@ function AppointmentScheduler({ requestId }) {
   const [occupied, setOccupied] = useState([]);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const availableDates = useMemo(() => {
+    const dates = [];
+    const cursor = new Date();
+    cursor.setHours(12, 0, 0, 0);
+    while (dates.length < 18) {
+      const value = [
+        cursor.getFullYear(),
+        String(cursor.getMonth() + 1).padStart(2, "0"),
+        String(cursor.getDate()).padStart(2, "0"),
+      ].join("-");
+      if (isAvailableInstallationDate(value)) dates.push(value);
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return dates;
+  }, []);
 
   useEffect(() => {
     supabase.from("installation_appointments")
@@ -18,7 +33,9 @@ function AppointmentScheduler({ requestId }) {
       .eq("request_id", requestId)
       .maybeSingle()
       .then(({ data, error }) => {
-        if (error) setMessage("El agendamiento todavía no está configurado en Supabase.");
+        if (error) {
+          setMessage(`El agendamiento no está disponible: ${error.message}`);
+        }
         if (data) {
           setAppointment(data);
           setDate(data.appointment_date);
@@ -90,9 +107,33 @@ function AppointmentScheduler({ requestId }) {
         <div><small>Cita actual</small><b>{new Intl.DateTimeFormat("es-EC", { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${appointment.appointment_date}T12:00:00Z`))}</b><span>{appointment.appointment_time.slice(0,5)} · {appointment.status === "confirmed" ? "Confirmada" : "Por confirmar"}</span></div>
         <button type="button" onClick={cancel} disabled={saving}>Cancelar cita</button>
       </div>}
-      <div className="appointment-picker">
-        <label>Selecciona una fecha<input type="date" min={todayIso()} value={date} onChange={event => chooseDate(event.target.value)}/></label>
-        <div><span>Horarios disponibles</span><div className="time-slots">{slots.map(slot => <button type="button" key={slot} disabled={!date || !isAvailableInstallationDate(date) || occupied.includes(slot)} className={time === slot ? "selected" : ""} onClick={() => setTime(slot)}>{slot}{occupied.includes(slot) && <small>Ocupado</small>}</button>)}</div></div>
+      <div className="visual-calendar">
+        <span>Selecciona una fecha disponible</span>
+        <div className="date-squares">
+          {availableDates.map(value => {
+            const itemDate = new Date(`${value}T12:00:00`);
+            return <button type="button" className={date === value ? "selected" : ""} onClick={() => chooseDate(value)} key={value}>
+              <small>{new Intl.DateTimeFormat("es-EC", { weekday: "short" }).format(itemDate)}</small>
+              <b>{itemDate.getDate()}</b>
+              <span>{new Intl.DateTimeFormat("es-EC", { month: "short" }).format(itemDate)}</span>
+              <i>{itemDate.getFullYear()}</i>
+            </button>;
+          })}
+        </div>
+      </div>
+      <div className={`schedule-dropdown ${date ? "is-visible" : ""}`}>
+        <label>
+          Horario para {date ? new Intl.DateTimeFormat("es-EC", { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${date}T12:00:00Z`)) : ""}
+          <select value={time} onChange={event => setTime(event.target.value)} disabled={!date}>
+            <option value="">Selecciona un horario</option>
+            <optgroup label="Mañana · 09:00 a 12:00">
+              {slots.slice(0,3).map(slot => <option value={slot} disabled={occupied.includes(slot)} key={slot}>{slot}{occupied.includes(slot) ? " — Ocupado" : " — Disponible"}</option>)}
+            </optgroup>
+            <optgroup label="Tarde · 14:00 a 17:00">
+              {slots.slice(3).map(slot => <option value={slot} disabled={occupied.includes(slot)} key={slot}>{slot}{occupied.includes(slot) ? " — Ocupado" : " — Disponible"}</option>)}
+            </optgroup>
+          </select>
+        </label>
       </div>
       <p className="appointment-hours">Mañana: 09:00–12:00 · Tarde: 14:00–17:00</p>
       {message && <p className="appointment-message" role="status">{message}</p>}
