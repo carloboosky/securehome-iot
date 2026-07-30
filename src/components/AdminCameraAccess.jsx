@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
+
+const DEFAULT_CAMERA_URL = "https://iot-security.pro/api/camera/stream";
 
 function AdminCameraAccess({ request, onClose }) {
   const [streamUrl, setStreamUrl] = useState("");
@@ -8,6 +10,15 @@ function AdminCameraAccess({ request, onClose }) {
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [accessGranted, setAccessGranted] = useState(false);
+  const cameraViewRef = useRef(null);
+
+  async function openFullscreen() {
+    try {
+      await cameraViewRef.current?.requestFullscreen();
+    } catch {
+      setMessage("El navegador no permitió abrir la cámara en pantalla completa.");
+    }
+  }
 
   async function requestAccess() {
     setSaving(true);
@@ -56,12 +67,12 @@ function AdminCameraAccess({ request, onClose }) {
     const { data: camera, error: cameraError } = await supabase.from("camera_devices")
       .select("stream_url").eq("request_id", request.id).maybeSingle();
     setAccessGranted(true);
-    if (cameraError || !camera) {
-      setMessage("Acceso autorizado durante 5 minutos. La cámara todavía no está configurada.");
-    } else {
-      setVideoUrl(camera.stream_url);
-      setMessage("Acceso autorizado durante 5 minutos.");
-    }
+    setVideoUrl(camera?.stream_url || DEFAULT_CAMERA_URL);
+    setMessage(
+      cameraError || !camera
+        ? "Acceso autorizado durante 5 minutos. Mostrando la cámara principal de AWS."
+        : "Acceso autorizado durante 5 minutos."
+    );
     window.setTimeout(() => {
       setVideoUrl("");
       setAccessGranted(false);
@@ -89,7 +100,10 @@ function AdminCameraAccess({ request, onClose }) {
             <div className="access-code-form"><input inputMode="numeric" maxLength={6} placeholder="000000" value={code} onChange={event => setCode(event.target.value.replace(/\D/g, "").slice(0,6))}/><button type="button" onClick={redeem} disabled={saving}>Validar código</button></div>
           </article>
           {message && <p className="appointment-message">{message}</p>}
-          {videoUrl && <div className="admin-camera-view"><img src={videoUrl} alt="Transmisión temporal autorizada por el cliente"/></div>}
+          {videoUrl && <div className="admin-camera-view" ref={cameraViewRef}>
+            <button type="button" className="fullscreen-button admin-fullscreen-button" onClick={openFullscreen}>⛶ Pantalla completa</button>
+            <img crossOrigin="anonymous" src={videoUrl} alt="Transmisión temporal autorizada por el cliente" onError={() => setMessage("El acceso está autorizado, pero el stream de AWS no está disponible en este momento.")}/>
+          </div>}
           {accessGranted && !videoUrl && <div className="admin-camera-view empty"><div><span>📷</span><b>Acceso autorizado</b><p>Cámara pendiente de configuración o conexión.</p></div></div>}
         </div>
       </section>

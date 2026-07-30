@@ -64,6 +64,7 @@ function SecurityCenter({ requestId }) {
   const [sounding, setSounding] = useState(false);
   const imgRef = useRef(null);
   const canvasRef = useRef(null);
+  const cameraPanelRef = useRef(null);
   const detectorRef = useRef(null);
   const animationFrameRef = useRef(null);
   const retryTimeoutRef = useRef(null);
@@ -238,6 +239,14 @@ function SecurityCenter({ requestId }) {
     }, 3000);
   }
 
+  async function openCameraFullscreen() {
+    try {
+      await cameraPanelRef.current?.requestFullscreen();
+    } catch {
+      setNotice("El navegador no permitió abrir la cámara en pantalla completa.");
+    }
+  }
+
   useEffect(() => {
     function receiveCode(code) {
       if (!code?.display_code) return;
@@ -361,10 +370,13 @@ function SecurityCenter({ requestId }) {
       {notice && <p className="control-notice" role="status">{notice}</p>}
 
       <div className="security-layout">
-        <article className="camera-panel">
+        <article className="camera-panel" ref={cameraPanelRef}>
           <div className="camera-topbar">
             <div><i className={cameraOnline ? "online" : ""}/><b>Cámara principal</b></div>
-            <span>{cameraOnline ? "EN VIVO" : "CONECTANDO"}</span>
+            <div className="camera-topbar-actions">
+              <span>{cameraOnline ? "EN VIVO" : "CONECTANDO"}</span>
+              <button type="button" className="fullscreen-button" onClick={openCameraFullscreen} aria-label="Ver cámara en pantalla completa">⛶ Pantalla completa</button>
+            </div>
           </div>
           <div className="camera-screen">
             <img
