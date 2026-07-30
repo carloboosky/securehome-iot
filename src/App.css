@@ -285,6 +285,7 @@ input:focus,select:focus,textarea:focus { border-color:var(--blue); box-shadow:0
 .table-chat-button { position:relative; display:inline-flex; align-items:center; gap:7px; padding:8px 12px; border:0; border-radius:8px; color:white; background:var(--blue); cursor:pointer; font-weight:800; }
 .row-unread-badge { min-width:19px; height:19px; display:grid; place-items:center; padding:0 4px; border:2px solid white; border-radius:20px; color:white; background:#e12f40; font-size:9px; line-height:1; }
 .table-actions { display:flex; gap:7px; }
+.table-details-button { padding:8px 12px; border:1px solid #b8caf0; border-radius:8px; color:#2356b5; background:#eef4ff; cursor:pointer; font-weight:800; }
 .table-camera-button { padding:8px 12px; border:0; border-radius:8px; color:white; background:#08765d; cursor:pointer; font-weight:800; }
 .chat-modal-backdrop { position:fixed; inset:0; z-index:100; overflow:hidden; background:rgba(8,17,32,.68); backdrop-filter:blur(4px); }
 .chat-modal { position:absolute; top:20px; bottom:20px; left:50%; transform:translateX(-50%); width:min(650px,calc(100% - 40px)); height:auto; max-height:none; overflow:hidden; display:grid; grid-template-rows:auto minmax(0,1fr); border-radius:19px; background:white; box-shadow:0 30px 90px rgba(0,0,0,.35); }
@@ -411,8 +412,7 @@ input:focus,select:focus,textarea:focus { border-color:var(--blue); box-shadow:0
 .admin-table select { min-width:140px; padding:8px; }
 .client-name-button { display:grid; gap:2px; padding:0; border:0; color:var(--navy); background:transparent; cursor:pointer; text-align:left; }
 .client-name-button small { color:var(--muted); }
-.client-name-button i { margin-top:3px; color:var(--blue); font-size:9px; font-style:normal; font-weight:800; opacity:0; transition:.15s; }
-.client-name-button:hover i { opacity:1; }
+.client-name-button i { margin-top:3px; color:var(--blue); font-size:9px; font-style:normal; font-weight:800; }
 .admin-delete-toolbar { position:sticky; left:0; display:flex; align-items:center; justify-content:space-between; gap:15px; padding:12px 18px; color:#7d2630; background:#fff1f2; border-bottom:1px solid #ffd2d7; }
 .admin-delete-toolbar span { font-size:12px; }
 .admin-delete-toolbar button { padding:9px 13px; border:0; border-radius:8px; color:white; background:#d93648; cursor:pointer; font-weight:800; }
