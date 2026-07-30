@@ -4,22 +4,14 @@ import { supabase } from "../lib/supabase";
 
 function AuthCallbackPage() {
   const navigate = useNavigate();
-  const [mensaje, setMensaje] = useState("Completando inicio de sesión...");
+  const [mensaje, setMensaje] = useState(
+    "Completando inicio de sesión con Google..."
+  );
 
   useEffect(() => {
-    async function procesarInicioDeSesion() {
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
+    let activo = true;
 
-      if (error || !session?.user) {
-        setMensaje("No se pudo completar el inicio de sesión con Google.");
-        return;
-      }
-
-      const usuario = session.user;
-
+    async function redirigirUsuario(usuario) {
       const { data: perfil, error: perfilError } = await supabase
         .from("profiles")
         .select("role")
@@ -27,14 +19,13 @@ function AuthCallbackPage() {
         .maybeSingle();
 
       if (perfilError) {
-        setMensaje("No se pudo consultar el perfil del usuario.");
+        console.error("Error consultando perfil:", perfilError);
+        setMensaje(
+          `No se pudo consultar el perfil: ${perfilError.message}`
+        );
         return;
       }
 
-      /*
-       * El primer ingreso con Google puede crear el usuario en Auth,
-       * pero todavía no existir en la tabla profiles.
-       */
       if (!perfil) {
         const { error: crearPerfilError } = await supabase
           .from("profiles")
@@ -49,31 +40,157 @@ function AuthCallbackPage() {
           });
 
         if (crearPerfilError) {
-          console.error(crearPerfilError);
+          console.error(
+            "Error creando perfil:",
+            crearPerfilError
+          );
+
           setMensaje(
-            "La cuenta de Google se creó, pero no se pudo crear el perfil."
+            `La cuenta de Google se creó, pero no se pudo crear el perfil: ${crearPerfilError.message}`
           );
           return;
         }
-
-        navigate("/dashboard", { replace: true });
-        return;
       }
 
-      if (perfil.role === "admin") {
+      if (!activo) return;
+
+      if (perfil?.role === "admin") {
         navigate("/admin", { replace: true });
       } else {
         navigate("/dashboard", { replace: true });
       }
     }
 
-    procesarInicioDeSesion();
+    async function procesarCallback() {
+      try {
+        const parametros = new URLSearchParams(
+          window.location.search
+        );
+
+        const codigo = parametros.get("code");
+        const errorDescripcion =
+          parametros.get("error_description");
+
+        if (errorDescripcion) {
+          setMensaje(
+            `Google devolvió un error: ${errorDescripcion}`
+          );
+          return;
+        }
+
+        /*
+         * Si Supabase regresó con ?code=..., se intercambia
+         * el código por una sesión.
+         */
+        if (codigo) {
+          const { data, error } =
+            await supabase.auth.exchangeCodeForSession(codigo);
+
+          if (error) {
+            console.error(
+              "Error intercambiando código:",
+              error
+            );
+
+            setMensaje(
+              `No se pudo completar la sesión: ${error.message}`
+            );
+            return;
+          }
+
+          if (data.session?.user) {
+            await redirigirUsuario(data.session.user);
+            return;
+          }
+        }
+
+        /*
+         * Para el flujo normal del navegador, esperamos
+         * el evento de autenticación de Supabase.
+         */
+        const {
+          data: { subscription },
+        } = supabase.auth.onAuthStateChange(
+          async (evento, session) => {
+            if (
+              session?.user &&
+              (evento === "SIGNED_IN" ||
+                evento === "INITIAL_SESSION")
+            ) {
+              await redirigirUsuario(session.user);
+            }
+          }
+        );
+
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+
+        if (error) {
+          console.error("Error obteniendo sesión:", error);
+          setMensaje(
+            `No se pudo obtener la sesión: ${error.message}`
+          );
+          subscription.unsubscribe();
+          return;
+        }
+
+        if (session?.user) {
+          await redirigirUsuario(session.user);
+          subscription.unsubscribe();
+          return;
+        }
+
+        /*
+         * Da unos segundos a Supabase para procesar
+         * los datos que llegaron en la URL.
+         */
+        setTimeout(async () => {
+          const {
+            data: { session: sesionFinal },
+          } = await supabase.auth.getSession();
+
+          if (!activo) return;
+
+          if (sesionFinal?.user) {
+            await redirigirUsuario(sesionFinal.user);
+          } else {
+            setMensaje(
+              "No se encontró una sesión activa. Regresa al inicio de sesión e inténtalo nuevamente."
+            );
+          }
+        }, 2000);
+
+        return () => subscription.unsubscribe();
+      } catch (error) {
+        console.error("Error en callback:", error);
+
+        setMensaje(
+          `Ocurrió un error al iniciar sesión: ${error.message}`
+        );
+      }
+    }
+
+    procesarCallback();
+
+    return () => {
+      activo = false;
+    };
   }, [navigate]);
 
   return (
     <main className="auth-page">
       <section className="auth-card">
+        <h1>Iniciando sesión</h1>
         <p>{mensaje}</p>
+
+        <button
+          type="button"
+          onClick={() => navigate("/login")}
+        >
+          Volver al inicio de sesión
+        </button>
       </section>
     </main>
   );
