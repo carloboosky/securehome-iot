@@ -173,24 +173,33 @@ SET search_path = public
 AS $$
 DECLARE
   matched_id bigint;
+  matched_used_at timestamptz;
 BEGIN
   IF NOT public.is_admin() THEN
     RAISE EXCEPTION 'No autorizado';
   END IF;
 
-  SELECT id INTO matched_id
+  SELECT id, used_at INTO matched_id, matched_used_at
   FROM public.camera_access_codes
   WHERE request_id = target_request_id
     AND (
       display_code = trim(plain_code)
       OR code_hash = encode(extensions.digest(trim(plain_code), 'sha256'), 'hex')
     )
-    AND used_at IS NULL
     AND expires_at > now()
   ORDER BY created_at DESC
   LIMIT 1;
 
   IF matched_id IS NULL THEN RETURN false; END IF;
+
+  IF matched_used_at IS NOT NULL THEN
+    RETURN EXISTS (
+      SELECT 1 FROM public.camera_access_grants
+      WHERE request_id = target_request_id
+        AND admin_id = auth.uid()
+        AND expires_at > now()
+    );
+  END IF;
   UPDATE public.camera_access_codes SET used_at = now(), display_code = NULL WHERE id = matched_id;
   DELETE FROM public.camera_access_grants
     WHERE request_id = target_request_id AND admin_id = auth.uid();
