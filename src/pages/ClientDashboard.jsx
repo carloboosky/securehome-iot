@@ -295,7 +295,7 @@ function ClientDashboard() {
             <RequestChat requestId={solicitud.id} role="client" />
           </section>
 
-          {!["installed", "cancelled"].includes(solicitud.status) && (
+          {solicitud.status !== "cancelled" && (
             <AppointmentScheduler requestId={solicitud.id} />
           )}
 
