@@ -1,8 +1,17 @@
 import { useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 
+const cameraAddressOptions = [
+  { name: "Cámara principal AWS", url: "https://iot-security.pro/api/camera/stream", verified: true },
+  { name: "Cámara IP 2", url: "https://192.168.1.101:8080/stream" },
+  { name: "Cámara IP 3", url: "https://192.168.1.102:8080/stream" },
+  { name: "Cámara IP 4", url: "https://10.0.0.25:8081/video" },
+  { name: "Cámara IP 5", url: "https://camera-local.example/live.mjpg" },
+];
+
 function AdminCameraAccess({ request, onClose }) {
   const [streamUrl, setStreamUrl] = useState("");
+  const [customAddress, setCustomAddress] = useState(false);
   const [code, setCode] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [message, setMessage] = useState("");
@@ -84,9 +93,36 @@ function AdminCameraAccess({ request, onClose }) {
         <div className="camera-admin-body">
           <article>
             <h3>1. Configurar cámara</h3>
-            <p>Esta dirección solamente queda disponible para el propietario y para administradores con permiso temporal.</p>
-            <input type="url" placeholder="https://servidor-seguro/transmision" value={streamUrl} onChange={event => setStreamUrl(event.target.value)}/>
-            <button type="button" onClick={configure} disabled={saving}>Guardar dirección segura</button>
+            <p>Selecciona una dirección para este cliente. Solamente la opción con el visto verde está comprobada.</p>
+            <div className="camera-address-options">
+              {cameraAddressOptions.map(option => {
+                const selected = !customAddress && streamUrl === option.url;
+                return <button
+                  type="button"
+                  className={`camera-address-option ${selected ? "selected" : ""}`}
+                  onClick={() => {
+                    setCustomAddress(false);
+                    setStreamUrl(option.url);
+                    setMessage("");
+                  }}
+                  key={option.url}
+                >
+                  <span className="camera-address-icon">📡</span>
+                  <span><b>{option.name}</b><small>{option.url}</small></span>
+                  {option.verified ? <i className="verified-address" title="Dirección verificada">✓</i> : <i className="sample-address">Ejemplo</i>}
+                </button>;
+              })}
+            </div>
+            <button type="button" className="add-camera-address" onClick={() => {
+              setCustomAddress(true);
+              setStreamUrl("");
+              setMessage("");
+            }}>＋ Agregar una nueva dirección</button>
+            {customAddress && <label className="custom-camera-address">
+              Nueva dirección de cámara
+              <input autoFocus type="url" placeholder="https://servidor-seguro/transmision" value={streamUrl} onChange={event => setStreamUrl(event.target.value)}/>
+            </label>}
+            <button type="button" onClick={configure} disabled={saving || !streamUrl.trim()}>Guardar dirección seleccionada</button>
           </article>
           <article>
             <h3>2. Solicitar acceso al cliente</h3>
