@@ -27,7 +27,11 @@ function AuthProvider({ children }) {
         .maybeSingle();
 
       if (!active) return;
-      setRole(error ? null : data?.role || "client");
+      setRole(
+        error
+          ? null
+          : data?.role?.trim().toLowerCase() || "client"
+      );
       setLoading(false);
     }
 

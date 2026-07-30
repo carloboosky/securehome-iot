@@ -61,7 +61,16 @@ function LoginPage() {
       return;
     }
 
-    if (perfil?.role === "admin") {
+    if (!perfil) {
+      await supabase.auth.signOut();
+      setMensaje(
+        "La cuenta existe, pero no tiene un perfil configurado. Debes crear su perfil con el rol admin en Supabase."
+      );
+      setCargando(false);
+      return;
+    }
+
+    if (perfil.role?.trim().toLowerCase() === "admin") {
       navigate("/admin");
     } else {
       navigate("/dashboard");
