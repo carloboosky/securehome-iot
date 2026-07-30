@@ -31,7 +31,6 @@ function AuthCallbackPage() {
           .from("profiles")
           .insert({
             id: usuario.id,
-            email: usuario.email,
             full_name:
               usuario.user_metadata?.full_name ||
               usuario.user_metadata?.name ||

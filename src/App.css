@@ -149,6 +149,100 @@ input:focus,select:focus,textarea:focus { border-color:var(--blue); box-shadow:0
 .dialog-close { width:36px; height:36px; border:0; border-radius:50%; cursor:pointer; font-size:20px; }
 .dialog-body p { color:var(--muted); line-height:1.6; }
 .dialog-action { width:100%; margin-top:12px; padding:12px; border:0; border-radius:10px; color:white; background:var(--blue); font-weight:800; cursor:pointer; }
+.household-fields { margin:2px 0; padding:18px; border:1px solid var(--line); border-radius:13px; }
+.household-fields legend { padding:0 7px; color:var(--navy); font-weight:800; }
+.household-fields > div { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.household-fields > small { display:block; margin-top:12px; color:var(--muted); }
+
+/* Centro de seguridad */
+.security-center { margin-top:28px; padding:30px; border-radius:20px; background:white; box-shadow:0 8px 28px rgba(16,29,54,.07); }
+.security-heading { display:flex; align-items:center; justify-content:space-between; gap:24px; margin-bottom:24px; }
+.security-heading h2 { margin:7px 0 5px; font:800 27px "Manrope"; }
+.security-heading p { margin:0; color:var(--muted); }
+.system-toggle { display:flex; align-items:center; gap:9px; padding:13px 18px; border:1px solid #cad5e5; border-radius:11px; color:var(--navy); background:white; cursor:pointer; font-weight:800; }
+.system-toggle span { font-size:19px; }
+.system-toggle.is-armed { border-color:#1fbe98; color:#08765d; background:#e7faf5; }
+.control-notice { margin:-8px 0 20px; padding:11px 14px; border-radius:9px; color:#315370; background:#eef6fc; font-size:13px; }
+.security-layout { display:grid; grid-template-columns:minmax(0,1.75fr) minmax(300px,.75fr); gap:20px; }
+.camera-panel { overflow:hidden; border-radius:17px; background:#101827; }
+.camera-topbar { height:54px; display:flex; align-items:center; justify-content:space-between; padding:0 18px; color:white; background:#172338; font-size:13px; }
+.camera-topbar div { display:flex; align-items:center; gap:9px; }
+.camera-topbar i { width:8px; height:8px; border-radius:50%; background:#8490a3; }
+.camera-topbar i.online { background:#26d6a9; box-shadow:0 0 0 4px rgba(38,214,169,.14); }
+.camera-topbar span { color:#aeb9ca; font-size:10px; font-weight:800; letter-spacing:1px; }
+.camera-screen { height:390px; display:grid; place-items:center; background:radial-gradient(circle at center,#24354c,#0c1422 67%); }
+.camera-screen > img { width:100%; height:100%; object-fit:contain; }
+.camera-placeholder { max-width:390px; padding:30px; color:#dfe7f1; text-align:center; }
+.camera-placeholder > span { display:block; font-size:54px; filter:grayscale(1); opacity:.65; }
+.camera-placeholder b { display:block; margin:15px 0 8px; font:700 17px "Manrope"; }
+.camera-placeholder p { margin:0; color:#8f9db1; font-size:13px; line-height:1.55; }
+.camera-config { display:flex; gap:8px; padding:13px; background:#172338; }
+.camera-config input { min-width:0; border-color:#38475e; color:white; background:#101827; }
+.camera-config button { padding:0 16px; border:0; border-radius:9px; color:white; background:var(--blue); cursor:pointer; font-weight:800; }
+.quick-controls { display:grid; gap:12px; }
+.control-card { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:12px; padding:17px; border:1px solid var(--line); border-radius:14px; }
+.control-icon { display:grid; place-items:center; width:40px; height:40px; border-radius:11px; background:#f1f5fb; font-size:20px; }
+.control-card h3 { margin:0 0 4px; color:var(--navy); font:800 14px "Manrope"; }
+.control-card p { margin:0; color:var(--muted); font-size:11px; line-height:1.4; }
+.alarm-card { grid-template-columns:auto 1fr; border-color:#ffd0d3; background:#fff8f8; }
+.alarm-card button { grid-column:1/-1; padding:10px; border:0; border-radius:9px; color:white; background:#e33f50; cursor:pointer; font-weight:800; }
+.alarm-card button:disabled { opacity:.65; }
+.switch { width:44px; height:25px; padding:3px; border:0; border-radius:20px; background:#cbd4e1; cursor:pointer; transition:.2s; }
+.switch span { display:block; width:19px; height:19px; border-radius:50%; background:white; transition:.2s; box-shadow:0 2px 5px rgba(0,0,0,.2); }
+.switch.on { background:var(--mint); }
+.switch.on span { transform:translateX(19px); }
+.device-badge { padding:6px 8px; border-radius:20px; color:#9a5b08; background:#fff2cf; font-size:10px; font-weight:800; }
+.schedule-card { margin-top:20px; padding:22px; border:1px solid var(--line); border-radius:16px; }
+.schedule-title { display:flex; gap:12px; align-items:center; }
+.schedule-title > span { font-size:25px; }
+.schedule-title h3 { margin:0 0 4px; font:800 17px "Manrope"; }
+.schedule-title p { margin:0; color:var(--muted); font-size:13px; }
+.mode-buttons { display:flex; gap:9px; margin:20px 0 0; }
+.mode-buttons button { padding:10px 15px; border:1px solid var(--line); border-radius:9px; color:#4d5a70; background:white; cursor:pointer; font-weight:700; }
+.mode-buttons button.selected { border-color:var(--blue); color:var(--blue); background:#edf3ff; }
+.custom-schedule { display:flex; align-items:end; flex-wrap:wrap; gap:15px; margin-top:18px; padding-top:18px; border-top:1px solid var(--line); }
+.day-picker { display:flex; gap:6px; margin-right:auto; }
+.day-picker button { width:35px; height:35px; border:1px solid var(--line); border-radius:50%; color:#647188; background:white; cursor:pointer; font-size:12px; font-weight:800; }
+.day-picker button.selected { border-color:var(--blue); color:white; background:var(--blue); }
+.custom-schedule label { display:grid; gap:5px; color:var(--muted); font-size:11px; font-weight:700; }
+.custom-schedule input { width:125px; padding:8px; }
+.integration-note { margin:15px 0 0; color:#8a94a7; font-size:11px; line-height:1.5; }
+
+/* Chat cliente / administración */
+.chat-section { padding:0; overflow:hidden; }
+.request-chat { display:flex; flex-direction:column; min-height:470px; background:white; }
+.chat-header { display:flex; align-items:center; justify-content:space-between; gap:15px; padding:18px 20px; border-bottom:1px solid var(--line); }
+.chat-header > div { display:flex; align-items:center; gap:12px; }
+.chat-header > div > span { display:grid; place-items:center; width:40px; height:40px; border-radius:12px; background:#edf3ff; font-size:20px; }
+.chat-header h3 { margin:0 0 3px; color:var(--navy); font:800 16px "Manrope"; }
+.chat-header p { margin:0; color:var(--muted); font-size:11px; }
+.chat-online { display:flex; align-items:center; gap:6px; color:#16876c; font-size:11px; font-weight:800; }
+.chat-online i { width:7px; height:7px; border-radius:50%; background:var(--mint); }
+.chat-messages { flex:1; height:320px; overflow:auto; display:flex; flex-direction:column; gap:10px; padding:20px; background:#f7f9fc; }
+.chat-empty { margin:auto; color:var(--muted); text-align:center; }
+.chat-empty > span { display:block; margin-bottom:9px; font-size:32px; }
+.chat-empty b { display:block; color:var(--navy); }
+.chat-empty p { margin:5px 0; font-size:12px; }
+.chat-message { align-self:flex-start; max-width:min(78%,520px); padding:10px 13px; border:1px solid var(--line); border-radius:5px 14px 14px 14px; background:white; box-shadow:0 3px 10px rgba(16,29,54,.04); }
+.chat-message.mine { align-self:flex-end; border-color:var(--blue); border-radius:14px 5px 14px 14px; color:white; background:var(--blue); }
+.chat-message small { display:block; margin-bottom:4px; color:var(--blue); font-size:10px; font-weight:800; }
+.chat-message.mine small { color:#dce8ff; }
+.chat-message p { margin:0; white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.45; }
+.chat-message time { display:block; margin-top:5px; color:#8b96aa; text-align:right; font-size:9px; }
+.chat-message.mine time { color:#d8e5ff; }
+.chat-error { margin:0; padding:8px 15px; color:#ae3341; background:#fff0f1; font-size:11px; }
+.chat-form { display:flex; gap:10px; padding:14px; border-top:1px solid var(--line); background:white; }
+.chat-form textarea { min-height:48px; max-height:100px; resize:none; }
+.chat-form button { flex:none; align-self:stretch; padding:0 19px; border:0; border-radius:10px; color:white; background:var(--blue); cursor:pointer; font-weight:800; }
+.chat-form button:disabled { opacity:.5; cursor:not-allowed; }
+.table-chat-button { padding:8px 12px; border:0; border-radius:8px; color:white; background:var(--blue); cursor:pointer; font-weight:800; }
+.chat-modal-backdrop { position:fixed; inset:0; z-index:100; display:grid; place-items:center; padding:20px; background:rgba(8,17,32,.68); backdrop-filter:blur(4px); }
+.chat-modal { width:min(650px,100%); overflow:hidden; border-radius:19px; background:white; box-shadow:0 30px 90px rgba(0,0,0,.35); }
+.chat-modal-title { display:flex; align-items:center; justify-content:space-between; padding:15px 18px; color:white; background:var(--navy); }
+.chat-modal-title > div { display:grid; gap:3px; }
+.chat-modal-title span { color:#aebbd0; font-size:10px; }
+.chat-modal-title button { width:34px; height:34px; border:0; border-radius:50%; color:white; background:rgba(255,255,255,.12); cursor:pointer; font-size:21px; }
+.chat-modal .request-chat { min-height:520px; }
 
 /* Administración */
 .admin-page { min-height:100vh; padding:35px 6%; background:#f4f7fb; }
@@ -177,4 +271,6 @@ input:focus,select:focus,textarea:focus { border-color:var(--blue); box-shadow:0
   .plan-card.featured { order:-1; }.cta { margin:55px 20px; padding:38px 25px; }
   footer { grid-template-columns:1fr; text-align:center; justify-items:center; }footer > div { flex-wrap:wrap; justify-content:center; }footer small { grid-column:auto; }
   .auth-card { padding:28px 22px; }.dashboard-page,.admin-page { padding:25px 17px; }.dashboard-header,.status-banner { align-items:stretch; flex-direction:column; }.dashboard-grid,.request-details { grid-template-columns:1fr; }.logout-button { width:100%; }
+  .household-fields > div { grid-template-columns:1fr; }.security-center { padding:20px 15px; }.security-heading { align-items:stretch; flex-direction:column; }.security-layout { grid-template-columns:1fr; }.camera-screen { height:260px; }.camera-config { flex-direction:column; }.camera-config button { min-height:42px; }.mode-buttons { flex-direction:column; }.custom-schedule { align-items:stretch; }.day-picker { width:100%; justify-content:space-between; margin:0; }.custom-schedule input { width:100%; }
+  .chat-form { flex-direction:column; }.chat-form button { min-height:43px; }.chat-message { max-width:88%; }.chat-modal-backdrop { padding:8px; }.chat-modal .request-chat { min-height:calc(100vh - 90px); }.chat-modal { max-height:98vh; }
 }

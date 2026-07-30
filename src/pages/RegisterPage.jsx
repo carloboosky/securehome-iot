@@ -16,6 +16,10 @@ function RegisterPage() {
     planId: "",
     tipoPropiedad: "house",
     direccion: "",
+    cantidadNinos: "0",
+    cantidadMascotas: "0",
+    cantidadGatos: "0",
+    tamanoPerro: "none",
     notas: "",
   });
 
@@ -249,7 +253,16 @@ function RegisterPage() {
         plan_id: Number(formulario.planId),
         property_type: formulario.tipoPropiedad,
         installation_address: formulario.direccion.trim(),
-        notes: formulario.notas.trim() || null,
+        notes: [
+          "DATOS DEL HOGAR",
+          `Niños: ${formulario.cantidadNinos}`,
+          `Mascotas: ${formulario.cantidadMascotas}`,
+          `Gatos: ${formulario.cantidadGatos}`,
+          `Tamaño de perro: ${{ none: "No tiene", small: "Pequeño", medium: "Mediano", large: "Grande" }[formulario.tamanoPerro]}`,
+          formulario.notas.trim()
+            ? `Información adicional: ${formulario.notas.trim()}`
+            : "",
+        ].filter(Boolean).join("\n"),
       });
 
     if (solicitudError) {
@@ -449,6 +462,34 @@ function RegisterPage() {
               </span>
             )}
           </label>
+
+          <fieldset className="household-fields">
+            <legend>Personas y mascotas en el hogar</legend>
+            <div>
+              <label>
+                Cantidad de niños
+                <input type="number" name="cantidadNinos" min="0" max="20" value={formulario.cantidadNinos} onChange={manejarCambio} />
+              </label>
+              <label>
+                Total de mascotas
+                <input type="number" name="cantidadMascotas" min="0" max="20" value={formulario.cantidadMascotas} onChange={manejarCambio} />
+              </label>
+              <label>
+                Cantidad de gatos
+                <input type="number" name="cantidadGatos" min="0" max="20" value={formulario.cantidadGatos} onChange={manejarCambio} />
+              </label>
+              <label>
+                Tamaño del perro
+                <select name="tamanoPerro" value={formulario.tamanoPerro} onChange={manejarCambio}>
+                  <option value="none">No tiene perro</option>
+                  <option value="small">Pequeño</option>
+                  <option value="medium">Mediano</option>
+                  <option value="large">Grande</option>
+                </select>
+              </label>
+            </div>
+            <small>Esto ayuda a calibrar los sensores y reducir falsas alarmas.</small>
+          </fieldset>
 
           <label>
             Información adicional

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import RequestChat from "../components/RequestChat";
 
 const labels = { pending: "Pendiente", contacted: "Contactado", scheduled: "Programado", installed: "Instalado", cancelled: "Cancelado" };
 
@@ -9,6 +10,7 @@ function AdminDashboard() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [chatRequest, setChatRequest] = useState(null);
 
   useEffect(() => {
     async function load() {
@@ -43,7 +45,7 @@ function AdminDashboard() {
   }
 
   const installed = requests.filter(item => item.status === "installed").length;
-  const pending = requests.filter(item => item.status === "pending").length;
+  const pending = requests.filter(item => !item.status || item.status === "pending").length;
 
   return (
     <main className="admin-page">
@@ -60,15 +62,24 @@ function AdminDashboard() {
       <section className="admin-table-wrap">
         {loading ? <div className="dashboard-message">Cargando solicitudes...</div> : requests.length === 0 ? <div className="empty-events"><h3>No hay solicitudes todavía</h3><p>Las nuevas solicitudes aparecerán aquí.</p></div> :
           <table className="admin-table">
-            <thead><tr><th>Cliente</th><th>Plan</th><th>Propiedad</th><th>Dirección</th><th>Fecha</th><th>Estado</th></tr></thead>
+            <thead><tr><th>Cliente</th><th>Plan</th><th>Propiedad</th><th>Dirección</th><th>Fecha</th><th>Estado</th><th>Conversación</th></tr></thead>
             <tbody>{requests.map(item => <tr key={item.id}>
               <td><b>{item.profiles?.full_name || "Sin nombre"}</b><br/><small>{item.profiles?.phone || "Sin teléfono"}</small></td>
               <td>{item.service_plans?.name || "Sin plan"}</td><td>{item.property_type}</td><td>{item.installation_address}</td>
               <td>{new Intl.DateTimeFormat("es-EC").format(new Date(item.created_at))}</td>
-              <td><select aria-label={`Estado de ${item.profiles?.full_name || "cliente"}`} value={item.status} onChange={e => updateStatus(item.id, e.target.value)}>{Object.entries(labels).map(([value,label]) => <option value={value} key={value}>{label}</option>)}</select></td>
+              <td><select aria-label={`Estado de ${item.profiles?.full_name || "cliente"}`} value={item.status || "pending"} onChange={e => updateStatus(item.id, e.target.value)}>{Object.entries(labels).map(([value,label]) => <option value={value} key={value}>{label}</option>)}</select></td>
+              <td><button type="button" className="table-chat-button" onClick={() => setChatRequest(item)}>Abrir chat</button></td>
             </tr>)}</tbody>
           </table>}
       </section>
+      {chatRequest && <div className="chat-modal-backdrop" role="presentation" onMouseDown={event => {
+        if (event.target === event.currentTarget) setChatRequest(null);
+      }}>
+        <section className="chat-modal" role="dialog" aria-modal="true" aria-label="Chat con el cliente">
+          <div className="chat-modal-title"><div><b>{chatRequest.profiles?.full_name || "Cliente"}</b><span>{chatRequest.installation_address}</span></div><button type="button" aria-label="Cerrar chat" onClick={() => setChatRequest(null)}>×</button></div>
+          <RequestChat requestId={chatRequest.id} role="admin" />
+        </section>
+      </div>}
     </main>
   );
 }

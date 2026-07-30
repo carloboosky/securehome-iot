@@ -15,6 +15,10 @@ function ServiceRequestPage() {
     planId: "",
     propertyType: "house",
     address: "",
+    childrenCount: "0",
+    petCount: "0",
+    catCount: "0",
+    dogSize: "none",
     notes: "",
   });
 
@@ -79,7 +83,14 @@ function ServiceRequestPage() {
       plan_id: Number(form.planId),
       property_type: form.propertyType,
       installation_address: form.address.trim(),
-      notes: form.notes.trim() || null,
+      notes: [
+        "DATOS DEL HOGAR",
+        `Niños: ${form.childrenCount}`,
+        `Mascotas: ${form.petCount}`,
+        `Gatos: ${form.catCount}`,
+        `Tamaño de perro: ${{ none: "No tiene", small: "Pequeño", medium: "Mediano", large: "Grande" }[form.dogSize]}`,
+        form.notes.trim() ? `Información adicional: ${form.notes.trim()}` : "",
+      ].filter(Boolean).join("\n"),
       status: "pending",
     });
     if (error) {
@@ -120,6 +131,26 @@ function ServiceRequestPage() {
             <input name="address" placeholder="Ciudad, sector, calle y referencia" value={form.address} onChange={change} className={errors.address ? "input-error" : ""}/>
             {errors.address && <span className="field-error">{errors.address}</span>}
           </label>
+          <fieldset className="household-fields">
+            <legend>Personas y mascotas en el hogar</legend>
+            <div>
+              <label>Cantidad de niños
+                <input type="number" name="childrenCount" min="0" max="20" value={form.childrenCount} onChange={change}/>
+              </label>
+              <label>Total de mascotas
+                <input type="number" name="petCount" min="0" max="20" value={form.petCount} onChange={change}/>
+              </label>
+              <label>Cantidad de gatos
+                <input type="number" name="catCount" min="0" max="20" value={form.catCount} onChange={change}/>
+              </label>
+              <label>Tamaño del perro
+                <select name="dogSize" value={form.dogSize} onChange={change}>
+                  <option value="none">No tiene perro</option><option value="small">Pequeño</option><option value="medium">Mediano</option><option value="large">Grande</option>
+                </select>
+              </label>
+            </div>
+            <small>Esto ayuda a calibrar los sensores y reducir falsas alarmas.</small>
+          </fieldset>
           <label>Información adicional <small className="password-help">(opcional)</small>
             <textarea name="notes" placeholder="Cuéntanos detalles del espacio o el horario de contacto" value={form.notes} onChange={change}/>
           </label>

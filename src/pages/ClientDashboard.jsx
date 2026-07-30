@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import SecurityCenter from "../components/SecurityCenter";
+import RequestChat from "../components/RequestChat";
 
 function ClientDashboard() {
   const navigate = useNavigate();
@@ -9,7 +11,6 @@ function ClientDashboard() {
   const [solicitud, setSolicitud] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [mensaje, setMensaje] = useState("");
-  const [dialogo, setDialogo] = useState(null);
 
   useEffect(() => {
     async function cargarCliente() {
@@ -112,13 +113,6 @@ function ClientDashboard() {
       year: "numeric",
     }).format(new Date(fecha));
   }
-
-  const acciones = {
-    camera: { titulo: "Cámara en vivo", texto: "La transmisión se abrirá cuando la cámara asignada esté conectada. Si ya fue instalada y no aparece, contacta a soporte.", accion: "Entendido" },
-    sensors: { titulo: "Estado de sensores", texto: "Tus sensores se encuentran vinculados al sistema. Las alertas de movimiento se enviarán por el canal configurado.", accion: "Entendido" },
-    telegram: { titulo: "Configurar Telegram", texto: "La vinculación requiere el código entregado durante la instalación. Abre el bot indicado en tu guía y envía ese código para activar las alertas.", accion: "Entendido" },
-    nfc: { titulo: "Tarjetas NFC", texto: "Por seguridad, las tarjetas se activan presencialmente. Solicita una nueva tarjeta al técnico asignado a tu instalación.", accion: "Entendido" },
-  };
 
   if (cargando) {
     return (
@@ -261,61 +255,13 @@ function ClientDashboard() {
             </div>
           </section>
 
+          <section className="events-section chat-section">
+            <RequestChat requestId={solicitud.id} role="client" />
+          </section>
+
           {solicitud.status === "installed" && (
-            <section className="events-section">
-              <div className="events-heading">
-                <div>
-                  <h2>Dispositivos</h2>
-                  <p>Equipos vinculados al sistema.</p>
-                </div>
-              </div>
-
-              <div className="dashboard-grid">
-                <article className="dashboard-card">
-                  <span className="dashboard-icon">📷</span>
-                  <h2>Cámara</h2>
-                  <p>Consulta la transmisión del sistema.</p>
-                  <button type="button" className="card-button" onClick={() => setDialogo(acciones.camera)}>
-                    Ver cámara
-                  </button>
-                </article>
-
-                <article className="dashboard-card">
-                  <span className="dashboard-icon">🚨</span>
-                  <h2>Sensores</h2>
-                  <p>Consulta el estado de los sensores.</p>
-                  <button type="button" className="card-button" onClick={() => setDialogo(acciones.sensors)}>
-                    Ver sensores
-                  </button>
-                </article>
-
-                <article className="dashboard-card">
-                  <span className="dashboard-icon">📱</span>
-                  <h2>Telegram</h2>
-                  <p>Configura las alertas instantáneas.</p>
-                  <button type="button" className="card-button" onClick={() => setDialogo(acciones.telegram)}>
-                    Configurar
-                  </button>
-                </article>
-
-                <article className="dashboard-card">
-                  <span className="dashboard-icon">🔑</span>
-                  <h2>Tarjetas NFC</h2>
-                  <p>Administra las tarjetas autorizadas.</p>
-                  <button type="button" className="card-button" onClick={() => setDialogo(acciones.nfc)}>
-                    Administrar
-                  </button>
-                </article>
-              </div>
-            </section>
+            <SecurityCenter requestId={solicitud.id} />
           )}
-          <dialog className="device-dialog" open={Boolean(dialogo)} onCancel={() => setDialogo(null)}>
-            {dialogo && <div className="dialog-body">
-              <div className="dialog-heading"><h2>{dialogo.titulo}</h2><button type="button" className="dialog-close" aria-label="Cerrar" onClick={() => setDialogo(null)}>×</button></div>
-              <p>{dialogo.texto}</p>
-              <button type="button" className="dialog-action" onClick={() => { if (dialogo.enlace) window.open(dialogo.enlace, "_blank", "noopener,noreferrer"); setDialogo(null); }}>{dialogo.accion}</button>
-            </div>}
-          </dialog>
         </>
       )}
     </main>
