@@ -1,5 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { FilesetResolver, ObjectDetector } from "@mediapipe/tasks-vision";
 import { supabase } from "../lib/supabase";
+
+const CAMERA_STREAM_URL = "https://iot-security.pro/api/camera/stream";
+const ALERTS_URL = "https://iot-security.pro/api/alerts";
+const ALERT_COOLDOWN_MS = 30_000;
 
 const days = [
   ["lun", "Lun"], ["mar", "Mar"], ["mie", "Mié"], ["jue", "Jue"],
@@ -44,29 +49,171 @@ function SecurityCenter({ requestId }) {
       return defaultConfig;
     }
   });
-  const [cameraUrl, setCameraUrl] = useState("");
+  const [cameraUrl, setCameraUrl] = useState(CAMERA_STREAM_URL);
+  const [cameraOnline, setCameraOnline] = useState(false);
   const [accessCode, setAccessCode] = useState("");
   const [accessExpires, setAccessExpires] = useState("");
+  const [urgentDismissed, setUrgentDismissed] = useState(false);
   const [notice, setNotice] = useState("");
   const [sounding, setSounding] = useState(false);
+  const imgRef = useRef(null);
+  const canvasRef = useRef(null);
+  const detectorRef = useRef(null);
+  const animationFrameRef = useRef(null);
+  const retryTimeoutRef = useRef(null);
+  const lastAlertAtRef = useRef(0);
 
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(config));
   }, [config, storageKey]);
 
   useEffect(() => {
-    supabaseCamera();
-    async function supabaseCamera() {
-      const { data } = await supabase.from("camera_devices").select("stream_url").eq("request_id", requestId).maybeSingle();
-      setCameraUrl(data?.stream_url || "");
+    let cancelled = false;
+
+    async function initializeDetector() {
+      try {
+        const vision = await FilesetResolver.forVisionTasks(
+          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/wasm"
+        );
+        const detector = await ObjectDetector.createFromOptions(vision, {
+          baseOptions: {
+            modelAssetPath: "https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite2/float16/1/efficientdet_lite2.tflite",
+            delegate: "GPU",
+          },
+          scoreThreshold: 0.60,
+          runningMode: "IMAGE",
+        });
+
+        if (cancelled) {
+          detector.close();
+          return;
+        }
+
+        detectorRef.current = detector;
+
+        function detectFrame() {
+          if (cancelled) return;
+
+          const image = imgRef.current;
+          const canvas = canvasRef.current;
+          const activeDetector = detectorRef.current;
+
+          if (image?.complete && image.naturalWidth > 0 && canvas && activeDetector) {
+            const displayWidth = image.clientWidth;
+            const displayHeight = image.clientHeight;
+            const pixelRatio = window.devicePixelRatio || 1;
+            const targetWidth = Math.round(displayWidth * pixelRatio);
+            const targetHeight = Math.round(displayHeight * pixelRatio);
+
+            if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+              canvas.width = targetWidth;
+              canvas.height = targetHeight;
+            }
+
+            const context = canvas.getContext("2d");
+            context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+            context.clearRect(0, 0, displayWidth, displayHeight);
+
+            try {
+              const { detections = [] } = activeDetector.detect(image);
+              const imageScale = Math.min(
+                displayWidth / image.naturalWidth,
+                displayHeight / image.naturalHeight
+              );
+              const renderedWidth = image.naturalWidth * imageScale;
+              const renderedHeight = image.naturalHeight * imageScale;
+              const offsetX = (displayWidth - renderedWidth) / 2;
+              const offsetY = (displayHeight - renderedHeight) / 2;
+
+              detections.forEach(detection => {
+                const box = detection.boundingBox;
+                const category = detection.categories?.[0];
+                if (!box || !category) return;
+
+                const x = offsetX + box.originX * imageScale;
+                const y = offsetY + box.originY * imageScale;
+                const width = box.width * imageScale;
+                const height = box.height * imageScale;
+                const label = `${category.categoryName} ${Math.round(category.score * 100)}%`;
+
+                context.strokeStyle = category.categoryName === "person" ? "#ff3b4f" : "#26d6a9";
+                context.fillStyle = context.strokeStyle;
+                context.lineWidth = 3;
+                context.font = "bold 14px sans-serif";
+                context.strokeRect(x, y, width, height);
+                const labelWidth = context.measureText(label).width + 12;
+                context.fillRect(x, Math.max(0, y - 24), labelWidth, 24);
+                context.fillStyle = "#ffffff";
+                context.fillText(label, x + 6, Math.max(17, y - 7));
+
+                const now = Date.now();
+                if (
+                  category.categoryName === "person"
+                  && category.score > 0.70
+                  && now - lastAlertAtRef.current >= ALERT_COOLDOWN_MS
+                ) {
+                  lastAlertAtRef.current = now;
+                  fetch(ALERTS_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      message: "🚨 INTRUSIÓN: Persona detectada en el stream",
+                      confidence: Math.round(category.score * 100),
+                      tipo_evento: "Persona",
+                    }),
+                  }).catch(error => console.error("No se pudo enviar la alerta:", error));
+                }
+              });
+            } catch (error) {
+              console.error("No se pudo analizar el fotograma de la cámara:", error);
+            }
+          }
+
+          animationFrameRef.current = window.requestAnimationFrame(detectFrame);
+        }
+
+        animationFrameRef.current = window.requestAnimationFrame(detectFrame);
+      } catch (error) {
+        console.error("No se pudo iniciar MediaPipe:", error);
+        if (!cancelled) setNotice("No se pudo iniciar el detector de personas en este navegador.");
+      }
     }
-  }, [requestId]);
+
+    initializeDetector();
+
+    return () => {
+      cancelled = true;
+      if (animationFrameRef.current !== null) {
+        window.cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (retryTimeoutRef.current !== null) {
+        window.clearTimeout(retryTimeoutRef.current);
+      }
+      detectorRef.current?.close();
+      detectorRef.current = null;
+      animationFrameRef.current = null;
+      retryTimeoutRef.current = null;
+    };
+  }, []);
+
+  function retryCameraStream() {
+    setCameraOnline(false);
+    setNotice("La cámara perdió la conexión. Reintentando en 3 segundos...");
+    if (retryTimeoutRef.current !== null) {
+      window.clearTimeout(retryTimeoutRef.current);
+    }
+    retryTimeoutRef.current = window.setTimeout(() => {
+      setCameraUrl(`${CAMERA_STREAM_URL}?t=${Date.now()}`);
+      retryTimeoutRef.current = null;
+    }, 3000);
+  }
 
   useEffect(() => {
     function receiveCode(code) {
       if (!code?.display_code) return;
       setAccessCode(code.display_code);
       setAccessExpires(code.expires_at);
+      setUrgentDismissed(false);
       setNotice("El administrador solicita acceso temporal a tu cámara.");
       if ("Notification" in window && Notification.permission === "granted") {
         new Notification("Solicitud urgente de acceso", {
@@ -163,13 +310,22 @@ function SecurityCenter({ requestId }) {
       <div className="security-layout">
         <article className="camera-panel">
           <div className="camera-topbar">
-            <div><i className={cameraUrl ? "online" : ""}/><b>Cámara principal</b></div>
-            <span>{cameraUrl ? "EN VIVO" : "SIN CONEXIÓN"}</span>
+            <div><i className={cameraOnline ? "online" : ""}/><b>Cámara principal</b></div>
+            <span>{cameraOnline ? "EN VIVO" : "CONECTANDO"}</span>
           </div>
           <div className="camera-screen">
-            {cameraUrl
-              ? <img src={cameraUrl} alt="Transmisión de la cámara del cliente" onError={() => setNotice("No se pudo abrir la cámara. Solicita al administrador que revise la conexión.")}/>
-              : <div className="camera-placeholder"><span>📷</span><b>Cámara pendiente de configuración</b><p>Por seguridad, solamente el administrador puede configurar la dirección de transmisión.</p></div>}
+            <img
+              ref={imgRef}
+              crossOrigin="anonymous"
+              src={cameraUrl}
+              alt="Transmisión en vivo de la cámara de seguridad"
+              onLoad={() => {
+                setCameraOnline(true);
+                setNotice("");
+              }}
+              onError={retryCameraStream}
+            />
+            <canvas ref={canvasRef} aria-hidden="true" />
           </div>
           <div className="camera-permission">
             <div><b>Acceso temporal para soporte</b><span>El administrador debe solicitar acceso. Recibirás un código nuevo que caduca en 5 minutos.</span></div>
@@ -200,7 +356,8 @@ function SecurityCenter({ requestId }) {
           </article>
         </aside>
       </div>
-      {accessCode && <aside className="urgent-camera-code" role="alert">
+      {accessCode && !urgentDismissed && <aside className="urgent-camera-code" role="alert">
+        <button type="button" className="urgent-close" aria-label="Cerrar alerta" onClick={() => setUrgentDismissed(true)}>×</button>
         <span>⚠️</span><div><b>Solicitud urgente de acceso a cámara</b><p>Comparte este código únicamente con el administrador. Caduca en 5 minutos y funciona una sola vez.</p><strong>{accessCode}</strong></div>
       </aside>}
 

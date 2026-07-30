@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS public.service_messages (
 );
 
 ALTER TABLE public.service_messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.service_messages REPLICA IDENTITY FULL;
 
 GRANT SELECT, INSERT ON TABLE public.service_messages TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE public.service_messages_id_seq TO authenticated;

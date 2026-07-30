@@ -28,17 +28,22 @@ function AdminDashboard() {
 
   useEffect(() => {
     let active = true;
-    supabase.from("service_messages")
-      .select("request_id")
-      .eq("sender_role", "client")
-      .is("read_at", null)
-      .then(({ data }) => {
-        if (!active) return;
-        setUnreadByRequest((data || []).reduce((counts, item) => ({
-          ...counts,
-          [item.request_id]: (counts[item.request_id] || 0) + 1,
-        }), {}));
-      });
+
+    function refreshUnread() {
+      return supabase.from("service_messages")
+        .select("request_id")
+        .eq("sender_role", "client")
+        .is("read_at", null)
+        .then(({ data }) => {
+          if (!active) return;
+          setUnreadByRequest((data || []).reduce((counts, item) => ({
+            ...counts,
+            [item.request_id]: (counts[item.request_id] || 0) + 1,
+          }), {}));
+        });
+    }
+
+    refreshUnread();
 
     const channel = supabase.channel("admin-unread-by-request")
       .on("postgres_changes", {
@@ -47,14 +52,13 @@ function AdminDashboard() {
         table: "service_messages",
       }, payload => {
         if (payload.new.sender_role !== "client") return;
-        setUnreadByRequest(counts => ({
-          ...counts,
-          [payload.new.request_id]: (counts[payload.new.request_id] || 0) + 1,
-        }));
+        refreshUnread();
       }).subscribe();
+    const polling = window.setInterval(refreshUnread, 3000);
 
     return () => {
       active = false;
+      window.clearInterval(polling);
       supabase.removeChannel(channel);
     };
   }, []);

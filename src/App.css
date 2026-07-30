@@ -175,8 +175,9 @@ input:focus,select:focus,textarea:focus { border-color:var(--blue); box-shadow:0
 .camera-topbar i { width:8px; height:8px; border-radius:50%; background:#8490a3; }
 .camera-topbar i.online { background:#26d6a9; box-shadow:0 0 0 4px rgba(38,214,169,.14); }
 .camera-topbar span { color:#aeb9ca; font-size:10px; font-weight:800; letter-spacing:1px; }
-.camera-screen { height:390px; display:grid; place-items:center; background:radial-gradient(circle at center,#24354c,#0c1422 67%); }
+.camera-screen { position:relative; height:390px; display:grid; place-items:center; background:radial-gradient(circle at center,#24354c,#0c1422 67%); }
 .camera-screen > img { width:100%; height:100%; object-fit:contain; }
+.camera-screen > canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
 .camera-placeholder { max-width:390px; padding:30px; color:#dfe7f1; text-align:center; }
 .camera-placeholder > span { display:block; font-size:54px; filter:grayscale(1); opacity:.65; }
 .camera-placeholder b { display:block; margin:15px 0 8px; font:700 17px "Manrope"; }
@@ -274,11 +275,13 @@ input:focus,select:focus,textarea:focus { border-color:var(--blue); box-shadow:0
 .camera-permission strong { padding:8px 12px; border-radius:8px; color:#172338; background:#fff; font-size:20px; letter-spacing:4px; }
 .camera-permission button,.camera-admin-body article > button,.access-code-form button { padding:10px 14px; border:0; border-radius:9px; color:white; background:var(--blue); cursor:pointer; font-weight:800; }
 .waiting-access { flex:none; padding:7px 10px; border-radius:20px; color:#b9c7da!important; background:#283750; font-weight:800; }
-.urgent-camera-code { position:fixed; top:90px; right:24px; z-index:95; width:min(430px,calc(100vw - 30px)); display:flex; gap:13px; padding:18px; border:2px solid #ef5966; border-radius:15px; color:#791b25; background:#fff0f1; box-shadow:0 18px 50px rgba(180,28,45,.28); animation:urgent-pulse 1.4s ease-in-out infinite alternate; }
+.urgent-camera-code { position:fixed; top:90px; right:24px; z-index:95; width:min(430px,calc(100vw - 30px)); display:flex; gap:13px; padding:18px 48px 18px 18px; border:2px solid #ef5966; border-radius:15px; color:#791b25; background:#fff0f1; box-shadow:0 18px 50px rgba(180,28,45,.28); animation:urgent-pulse 1.4s ease-in-out infinite alternate; }
 .urgent-camera-code > span { font-size:29px; }
 .urgent-camera-code b { display:block; margin-bottom:5px; }
 .urgent-camera-code p { margin:0 0 11px; font-size:12px; line-height:1.5; }
 .urgent-camera-code strong { display:inline-block; padding:8px 14px; border-radius:8px; color:white; background:#d92f40; font-size:25px; letter-spacing:6px; }
+.urgent-close { position:absolute; top:10px; right:10px; width:29px; height:29px; display:grid; place-items:center; padding:0; border:0; border-radius:50%; color:#9b2934; background:#ffdce0; cursor:pointer; font-size:21px; line-height:1; transition:.18s; }
+.urgent-close:hover { color:white; background:#d92f40; transform:scale(1.06); }
 @keyframes urgent-pulse { to { box-shadow:0 20px 55px rgba(180,28,45,.42); } }
 .request-camera-code { width:100%; margin-bottom:8px; background:#d92f40!important; }
 .camera-admin-modal { position:absolute; top:20px; bottom:20px; left:50%; transform:translateX(-50%); width:min(760px,calc(100% - 40px)); overflow:hidden; border-radius:19px; background:#f7f9fc; box-shadow:0 30px 90px rgba(0,0,0,.35); }
