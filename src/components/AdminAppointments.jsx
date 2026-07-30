@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { sendAutomaticMessage } from "../lib/sendAutomaticMessage";
+
+const appointmentStatusLabels = {
+  pending: "Por confirmar",
+  confirmed: "Confirmada",
+  completed: "Completada",
+  cancelled: "Cancelada",
+};
 
 function AdminAppointments({ requests }) {
   const [appointments, setAppointments] = useState([]);
@@ -41,9 +49,33 @@ function AdminAppointments({ requests }) {
   }, []);
 
   async function changeStatus(id, status) {
+    const appointment = appointments.find(item => item.id === id);
+    if (!appointment) return;
+
     const { error: updateError } = await supabase.from("installation_appointments").update({ status }).eq("id", id);
-    if (updateError) setError(updateError.message);
-    else setAppointments(items => items.map(item => item.id === id ? { ...item, status } : item));
+    if (updateError) {
+      setError(updateError.message);
+      return;
+    }
+
+    setAppointments(items => items.map(item => item.id === id ? { ...item, status } : item));
+
+    const formattedDate = new Intl.DateTimeFormat("es-EC", {
+      dateStyle: "long",
+      timeZone: "UTC",
+    }).format(new Date(`${appointment.appointment_date}T12:00:00Z`));
+    const messages = {
+      pending: `🕒 Tu cita del ${formattedDate} a las ${appointment.appointment_time.slice(0, 5)} está pendiente de confirmación.`,
+      confirmed: `✅ Tu cita de instalación fue confirmada para el ${formattedDate} a las ${appointment.appointment_time.slice(0, 5)}.`,
+      completed: `🏠 La visita de instalación del ${formattedDate} fue marcada como completada. Gracias por confiar en SecureHome.`,
+      cancelled: `❌ La cita prevista para el ${formattedDate} fue cancelada. Puedes solicitar una nueva fecha desde tu panel.`,
+    };
+    const { error: messageError } = await sendAutomaticMessage(appointment.request_id, messages[status]);
+    setError(
+      messageError
+        ? `La cita se actualizó, pero no se pudo notificar al cliente: ${messageError.message}`
+        : `Cita ${appointmentStatusLabels[status].toLowerCase()}. Mensaje enviado al cliente.`
+    );
   }
 
   return (

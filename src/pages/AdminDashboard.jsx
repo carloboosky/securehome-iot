@@ -5,8 +5,16 @@ import RequestChat from "../components/RequestChat";
 import AdminAppointments from "../components/AdminAppointments";
 import AdminCameraAccess from "../components/AdminCameraAccess";
 import MessageNotifications from "../components/MessageNotifications";
+import { sendAutomaticMessage } from "../lib/sendAutomaticMessage";
 
 const labels = { pending: "Pendiente", contacted: "Contactado", scheduled: "Programado", installed: "Instalado", cancelled: "Cancelado" };
+const automaticStatusMessages = {
+  pending: "🕒 Tu solicitud está pendiente de revisión. Te avisaremos cuando un asesor empiece a gestionarla.",
+  contacted: "📞 Tu solicitud cambió a Contactado. Un asesor de SecureHome se comunicará contigo.",
+  scheduled: "📅 Tu solicitud fue programada. Revisa la sección de instalación para consultar o elegir la fecha de la visita.",
+  installed: "✅ Tu sistema figura como instalado. Ya puedes utilizar las funciones de seguridad disponibles en tu panel.",
+  cancelled: "❌ Tu solicitud fue cancelada. Si necesitas ayuda o deseas retomarla, escríbenos por este chat.",
+};
 
 function AdminDashboard() {
   const navigate = useNavigate();
@@ -97,7 +105,15 @@ function AdminDashboard() {
     if (error) {
       setRequests(previous);
       setMessage(`No se pudo actualizar: ${error.message}`);
-    } else setMessage("Estado actualizado correctamente.");
+      return;
+    }
+
+    const { error: messageError } = await sendAutomaticMessage(id, automaticStatusMessages[status]);
+    setMessage(
+      messageError
+        ? `Estado actualizado, pero no se pudo enviar el mensaje automático: ${messageError.message}`
+        : `Estado actualizado a ${labels[status]}. El cliente recibió un mensaje automático.`
+    );
   }
 
   async function logout() {
