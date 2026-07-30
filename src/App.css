@@ -39,7 +39,7 @@ a { color: inherit; }
 .trust-row svg, .plan-card li svg { width: 17px; fill: none; stroke: var(--mint); stroke-width: 2.5; }
 .hero-visual { min-height: 470px; position: relative; }
 .hero-visual::before { content:""; position:absolute; inset: 20px -25px -20px 35px; border-radius: 35px; background: #dce9f8; transform: rotate(3deg); }
-.hero-visual img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; border-radius:28px; box-shadow:0 30px 70px rgba(16,29,54,.2); }
+.hero-visual img { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; object-position:center; border-radius:28px; background:linear-gradient(135deg,#101c29,#223748); box-shadow:0 30px 70px rgba(16,29,54,.2); }
 .status-float { position: absolute; left: -35px; bottom: 25px; display: flex; align-items: center; gap: 12px; padding: 15px 19px; background: #fff; border-radius: 14px; box-shadow: 0 18px 40px rgba(16,29,54,.17); }
 .status-icon { display:grid; place-items:center; width: 36px; height: 36px; border-radius: 50%; color: white; background: var(--mint); font-weight: 800; }
 .status-float div { display:grid; gap: 2px; font-size: 13px; }
