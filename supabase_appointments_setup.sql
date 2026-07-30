@@ -40,9 +40,23 @@ CREATE TABLE IF NOT EXISTS public.installation_appointments (
 );
 
 ALTER TABLE public.installation_appointments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.installation_appointments REPLICA IDENTITY FULL;
 
 GRANT SELECT, INSERT, UPDATE ON TABLE public.installation_appointments TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE public.installation_appointments_id_seq TO authenticated;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+      AND schemaname = 'public'
+      AND tablename = 'installation_appointments'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime
+      ADD TABLE public.installation_appointments;
+  END IF;
+END $$;
 
 CREATE UNIQUE INDEX IF NOT EXISTS unique_active_installation_slot
 ON public.installation_appointments (appointment_date, appointment_time)

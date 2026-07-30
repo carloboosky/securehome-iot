@@ -14,6 +14,7 @@ function ClientDashboard() {
   const [cargando, setCargando] = useState(true);
   const [mensaje, setMensaje] = useState("");
   const [actualizacion, setActualizacion] = useState("");
+  const [chatAbierto, setChatAbierto] = useState(false);
 
   useEffect(() => {
     async function cargarCliente() {
@@ -105,6 +106,15 @@ function ClientDashboard() {
     };
   }, [solicitud?.id]);
 
+  useEffect(() => {
+    if (!chatAbierto) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [chatAbierto]);
+
   async function cerrarSesion() {
     setMensaje("");
 
@@ -179,9 +189,7 @@ function ClientDashboard() {
           <button type="button" aria-label="Cerrar notificación" onClick={() => setActualizacion("")}>×</button>
         </div>
       )}
-      {solicitud && <MessageNotifications role="client" onOpen={() => {
-        document.querySelector(".chat-section")?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }} />}
+      {solicitud && <MessageNotifications role="client" onOpen={() => setChatAbierto(true)} />}
 
       {!solicitud ? (
         <section className="empty-request">
@@ -291,17 +299,21 @@ function ClientDashboard() {
             </div>
           </section>
 
-          <section className="events-section chat-section">
-            <RequestChat requestId={solicitud.id} role="client" />
-          </section>
-
-          {solicitud.status !== "cancelled" && (
+          {!["installed", "cancelled"].includes(solicitud.status) && (
             <AppointmentScheduler requestId={solicitud.id} />
           )}
 
           {solicitud.status === "installed" && (
             <SecurityCenter requestId={solicitud.id} />
           )}
+          {chatAbierto && <div className="chat-modal-backdrop" role="presentation" onMouseDown={event => {
+            if (event.target === event.currentTarget) setChatAbierto(false);
+          }}>
+            <section className="chat-modal client-chat-modal" role="dialog" aria-modal="true" aria-label="Chat de soporte">
+              <div className="chat-modal-title"><div><b>Soporte SecureHome</b><span>Conversación con administración</span></div><button type="button" aria-label="Cerrar chat" onClick={() => setChatAbierto(false)}>×</button></div>
+              <RequestChat requestId={solicitud.id} role="client" />
+            </section>
+          </div>}
         </>
       )}
     </main>

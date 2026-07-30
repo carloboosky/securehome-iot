@@ -76,7 +76,7 @@ function AdminDashboard() {
         <article className="summary-card"><span>Pendientes</span><b>{pending}</b></article>
         <article className="summary-card"><span>Instalaciones completas</span><b>{installed}</b></article>
       </section>
-      <AdminAppointments />
+      <AdminAppointments requests={requests} />
       <section className="admin-table-wrap">
         {loading ? <div className="dashboard-message">Cargando solicitudes...</div> : requests.length === 0 ? <div className="empty-events"><h3>No hay solicitudes todavía</h3><p>Las nuevas solicitudes aparecerán aquí.</p></div> :
           <table className="admin-table">

@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 const days = [
-  ["lun", "L"], ["mar", "M"], ["mie", "X"], ["jue", "J"],
-  ["vie", "V"], ["sab", "S"], ["dom", "D"],
+  ["lun", "Lun"], ["mar", "Mar"], ["mie", "Mié"], ["jue", "Jue"],
+  ["vie", "Vie"], ["sab", "Sáb"], ["dom", "Dom"],
 ];
 
 const defaultConfig = {
@@ -27,6 +27,7 @@ function SecurityCenter({ requestId }) {
   });
   const [cameraUrl, setCameraUrl] = useState("");
   const [accessCode, setAccessCode] = useState("");
+  const [accessExpires, setAccessExpires] = useState("");
   const [notice, setNotice] = useState("");
   const [sounding, setSounding] = useState(false);
 
@@ -42,16 +43,50 @@ function SecurityCenter({ requestId }) {
     }
   }, [requestId]);
 
-  async function createAccessCode() {
-    const { data, error } = await supabase.rpc("create_camera_access_code", {
-      target_request_id: requestId,
-    });
-    if (error) setNotice(`No se pudo generar el código: ${error.message}`);
-    else {
-      setAccessCode(data);
-      setNotice("Comparte este código únicamente con el administrador. Caduca en 10 minutos.");
+  useEffect(() => {
+    function receiveCode(code) {
+      if (!code?.display_code) return;
+      setAccessCode(code.display_code);
+      setAccessExpires(code.expires_at);
+      setNotice("El administrador solicita acceso temporal a tu cámara.");
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification("Solicitud urgente de acceso", {
+          body: `Código temporal: ${code.display_code}. Caduca en 5 minutos.`,
+        });
+      }
     }
-  }
+
+    supabase.from("camera_access_codes")
+      .select("display_code,expires_at")
+      .eq("request_id", requestId)
+      .is("used_at", null)
+      .gt("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => receiveCode(data));
+
+    const channel = supabase.channel(`camera-code-${requestId}`)
+      .on("postgres_changes", {
+        event: "INSERT",
+        schema: "public",
+        table: "camera_access_codes",
+        filter: `request_id=eq.${requestId}`,
+      }, payload => receiveCode(payload.new))
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [requestId]);
+
+  useEffect(() => {
+    if (!accessExpires) return undefined;
+    const remaining = new Date(accessExpires).getTime() - Date.now();
+    const timer = window.setTimeout(() => {
+      setAccessCode("");
+      setAccessExpires("");
+      setNotice("La solicitud de acceso caducó. El administrador deberá pedir un código nuevo.");
+    }, Math.max(0, remaining));
+    return () => window.clearTimeout(timer);
+  }, [accessExpires]);
 
   function update(key, value) {
     setConfig(previous => ({ ...previous, [key]: value }));
@@ -118,9 +153,8 @@ function SecurityCenter({ requestId }) {
               : <div className="camera-placeholder"><span>📷</span><b>Cámara pendiente de configuración</b><p>Por seguridad, solamente el administrador puede configurar la dirección de transmisión.</p></div>}
           </div>
           <div className="camera-permission">
-            <div><b>Acceso temporal para soporte</b><span>Genera un código si el administrador necesita revisar la cámara.</span></div>
-            {accessCode && <strong>{accessCode}</strong>}
-            <button type="button" onClick={createAccessCode}>{accessCode ? "Generar otro" : "Generar código"}</button>
+            <div><b>Acceso temporal para soporte</b><span>El administrador debe solicitar acceso. Recibirás un código nuevo que caduca en 5 minutos.</span></div>
+            <span className="waiting-access">{accessCode ? "Solicitud recibida" : "Sin solicitudes"}</span>
           </div>
         </article>
 
@@ -147,6 +181,9 @@ function SecurityCenter({ requestId }) {
           </article>
         </aside>
       </div>
+      {accessCode && <aside className="urgent-camera-code" role="alert">
+        <span>⚠️</span><div><b>Solicitud urgente de acceso a cámara</b><p>Comparte este código únicamente con el administrador. Caduca en 5 minutos y funciona una sola vez.</p><strong>{accessCode}</strong></div>
+      </aside>}
 
       <article className="schedule-card">
         <div className="schedule-title"><span>🕒</span><div><h3>Horario de protección</h3><p>Decide cuándo se activará automáticamente el sistema.</p></div></div>
@@ -155,9 +192,16 @@ function SecurityCenter({ requestId }) {
           <button type="button" className={config.mode === "custom" ? "selected" : ""} onClick={() => update("mode", "custom")}>Horario personalizado</button>
         </div>
         {config.mode === "custom" && <div className="custom-schedule">
-          <div className="day-picker">{days.map(([value, label]) => <button type="button" aria-label={value} className={config.days.includes(value) ? "selected" : ""} onClick={() => toggleDay(value)} key={value}>{label}</button>)}</div>
-          <label>Desde <input type="time" value={config.start} onChange={event => update("start", event.target.value)}/></label>
-          <label>Hasta <input type="time" value={config.end} onChange={event => update("end", event.target.value)}/></label>
+          <div className="schedule-days">
+            <span>Días activos</span>
+            <div className="day-picker">{days.map(([value, label]) => <button type="button" aria-label={value} className={config.days.includes(value) ? "selected" : ""} onClick={() => toggleDay(value)} key={value}><i>✓</i>{label}</button>)}</div>
+          </div>
+          <div className="time-range">
+            <label><span>🌙 Hora de inicio</span><input type="time" value={config.start} onChange={event => update("start", event.target.value)}/></label>
+            <b>→</b>
+            <label><span>☀️ Hora de fin</span><input type="time" value={config.end} onChange={event => update("end", event.target.value)}/></label>
+          </div>
+          <p className="schedule-summary">🛡️ El sistema se activará de <strong>{config.start}</strong> a <strong>{config.end}</strong> los días seleccionados.</p>
         </div>}
       </article>
       <p className="integration-note">Los ajustes se guardan en este navegador. Para controlar la cámara, sirena, NFC y Telegram físicamente, el técnico debe conectar la API del equipo instalado.</p>

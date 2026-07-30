@@ -52,7 +52,10 @@ function MessageNotifications({ role, onOpen }) {
     <>
       <button type="button" className="message-bubble" aria-label={`${pending.length} mensajes pendientes`} onClick={() => {
         if (pending[0]) openConversation(pending[0].request_id);
-        else enableNotifications();
+        else {
+          enableNotifications();
+          onOpen(null);
+        }
       }}>
         💬{pending.length > 0 && <span>{pending.length > 99 ? "99+" : pending.length}</span>}
       </button>

@@ -11,6 +11,7 @@ function AppointmentScheduler({ requestId }) {
   const [occupied, setOccupied] = useState([]);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const availableDates = useMemo(() => {
     const dates = [];
     const cursor = new Date();
@@ -99,10 +100,16 @@ function AppointmentScheduler({ requestId }) {
   }
 
   return (
-    <section className="appointment-card">
-      <div className="appointment-heading">
+    <section className={`appointment-card compact ${expanded ? "expanded" : ""}`}>
+      <div className="appointment-compact-header">
+        <div className="appointment-heading">
         <span>📅</span><div><span className="form-step">Instalación</span><h2>Agenda tu visita técnica</h2><p>Atendemos de lunes a viernes, excepto feriados nacionales.</p></div>
+        </div>
+        <button type="button" className="appointment-open" onClick={() => setExpanded(value => !value)}>
+          {expanded ? "Cerrar calendario" : appointment && appointment.status !== "cancelled" ? "Ver o cambiar cita" : "Agendar instalación"}
+        </button>
       </div>
+      {expanded && <>
       {appointment && appointment.status !== "cancelled" && <div className={`appointment-current ${appointment.status}`}>
         <div><small>Cita actual</small><b>{new Intl.DateTimeFormat("es-EC", { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${appointment.appointment_date}T12:00:00Z`))}</b><span>{appointment.appointment_time.slice(0,5)} · {appointment.status === "confirmed" ? "Confirmada" : "Por confirmar"}</span></div>
         <button type="button" onClick={cancel} disabled={saving}>Cancelar cita</button>
@@ -138,6 +145,7 @@ function AppointmentScheduler({ requestId }) {
       <p className="appointment-hours">Mañana: 09:00–12:00 · Tarde: 14:00–17:00</p>
       {message && <p className="appointment-message" role="status">{message}</p>}
       <button type="button" className="appointment-save" disabled={saving || !date || !time} onClick={save}>{saving ? "Guardando..." : appointment && appointment.status !== "cancelled" ? "Reprogramar cita" : "Solicitar cita"}</button>
+      </>}
     </section>
   );
 }

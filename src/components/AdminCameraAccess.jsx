@@ -8,6 +8,16 @@ function AdminCameraAccess({ request, onClose }) {
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
 
+  async function requestAccess() {
+    setSaving(true);
+    const { data, error } = await supabase.rpc("request_camera_access", {
+      target_request_id: request.id,
+    });
+    if (error || !data) setMessage(`No se pudo solicitar acceso: ${error?.message || "Error desconocido"}`);
+    else setMessage("Solicitud enviada. El cliente recibió un código urgente que caduca en 5 minutos.");
+    setSaving(false);
+  }
+
   async function configure() {
     if (!/^https:\/\//i.test(streamUrl.trim())) {
       setMessage("La transmisión debe utilizar una dirección HTTPS segura.");
@@ -46,11 +56,11 @@ function AdminCameraAccess({ request, onClose }) {
     if (cameraError || !camera) setMessage("No hay una cámara configurada para esta solicitud.");
     else {
       setVideoUrl(camera.stream_url);
-      setMessage("Acceso autorizado durante 30 minutos.");
+      setMessage("Acceso autorizado durante 5 minutos.");
       window.setTimeout(() => {
         setVideoUrl("");
         setMessage("El permiso temporal para ver la cámara ha caducado.");
-      }, 30 * 60 * 1000);
+      }, 5 * 60 * 1000);
     }
     setSaving(false);
   }
@@ -68,7 +78,9 @@ function AdminCameraAccess({ request, onClose }) {
           </article>
           <article>
             <h3>2. Solicitar acceso al cliente</h3>
-            <p>Pide al cliente el código temporal de seis números generado en su dashboard.</p>
+            <p>Envía una solicitud urgente. El cliente recibirá un código nuevo que caduca en 5 minutos.</p>
+            <button type="button" className="request-camera-code" onClick={requestAccess} disabled={saving}>Solicitar código al cliente</button>
+            <p>Cuando el cliente te comparta el código, ingrésalo aquí:</p>
             <div className="access-code-form"><input inputMode="numeric" maxLength={6} placeholder="000000" value={code} onChange={event => setCode(event.target.value.replace(/\D/g, "").slice(0,6))}/><button type="button" onClick={redeem} disabled={saving}>Validar código</button></div>
           </article>
           {message && <p className="appointment-message">{message}</p>}

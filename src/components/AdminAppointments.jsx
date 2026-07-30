@@ -1,25 +1,43 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-function AdminAppointments() {
+function AdminAppointments({ requests }) {
   const [appointments, setAppointments] = useState([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
     let active = true;
-    supabase
+
+    function loadAppointments() {
+      supabase
       .from("installation_appointments")
-      .select("id,request_id,appointment_date,appointment_time,status,service_requests(installation_address,profiles(full_name,phone))")
+      .select("id,request_id,appointment_date,appointment_time,status")
       .order("appointment_date")
       .order("appointment_time")
       .then(({ data, error: queryError }) => {
         if (!active) return;
         if (queryError) {
           setError(`No se pudo cargar la agenda: ${queryError.message}`);
+        } else {
+          setError("");
+          setAppointments(data || []);
         }
-        else setAppointments(data || []);
       });
-    return () => { active = false; };
+    }
+
+    loadAppointments();
+    const channel = supabase.channel("admin-appointments-live")
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "installation_appointments",
+      }, loadAppointments)
+      .subscribe();
+
+    return () => {
+      active = false;
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   async function changeStatus(id, status) {
@@ -33,11 +51,13 @@ function AdminAppointments() {
       <div className="events-heading"><h2>Agenda de instalaciones</h2><p>Confirma y organiza las próximas visitas técnicas.</p></div>
       {error && <p className="dashboard-message">{error}</p>}
       {!error && appointments.length === 0 ? <p className="empty-appointments">No hay citas solicitadas.</p> :
-        <div className="appointment-list">{appointments.map(item => <article key={item.id}>
+        <div className="appointment-list">{appointments.map(item => {
+          const request = requests.find(requestItem => requestItem.id === item.request_id);
+          return <article key={item.id}>
           <div className="appointment-date-box"><b>{new Date(`${item.appointment_date}T12:00:00Z`).getUTCDate()}</b><span>{new Intl.DateTimeFormat("es-EC", { month: "short", timeZone: "UTC" }).format(new Date(`${item.appointment_date}T12:00:00Z`))}</span></div>
-          <div><b>{item.service_requests?.profiles?.full_name || "Cliente"}</b><span>{item.appointment_time.slice(0,5)} · {item.service_requests?.installation_address}</span><small>{item.service_requests?.profiles?.phone || "Sin teléfono"}</small></div>
+          <div><b>{request?.profiles?.full_name || "Cliente"}</b><span>{item.appointment_time.slice(0,5)} · {request?.installation_address || "Dirección no disponible"}</span><small>{request?.profiles?.phone || "Sin teléfono"}</small></div>
           <select value={item.status} onChange={event => changeStatus(item.id, event.target.value)}><option value="pending">Por confirmar</option><option value="confirmed">Confirmada</option><option value="completed">Completada</option><option value="cancelled">Cancelada</option></select>
-        </article>)}</div>}
+        </article>;})}</div>}
     </section>
   );
 }
