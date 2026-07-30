@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
 
 const days = [
   ["lun", "L"], ["mar", "M"], ["mie", "X"], ["jue", "J"],
@@ -13,7 +14,6 @@ const defaultConfig = {
   days: ["lun", "mar", "mie", "jue", "vie", "sab", "dom"],
   start: "20:00",
   end: "07:00",
-  cameraUrl: "",
 };
 
 function SecurityCenter({ requestId }) {
@@ -25,13 +25,33 @@ function SecurityCenter({ requestId }) {
       return defaultConfig;
     }
   });
-  const [cameraInput, setCameraInput] = useState(config.cameraUrl);
+  const [cameraUrl, setCameraUrl] = useState("");
+  const [accessCode, setAccessCode] = useState("");
   const [notice, setNotice] = useState("");
   const [sounding, setSounding] = useState(false);
 
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(config));
   }, [config, storageKey]);
+
+  useEffect(() => {
+    supabaseCamera();
+    async function supabaseCamera() {
+      const { data } = await supabase.from("camera_devices").select("stream_url").eq("request_id", requestId).maybeSingle();
+      setCameraUrl(data?.stream_url || "");
+    }
+  }, [requestId]);
+
+  async function createAccessCode() {
+    const { data, error } = await supabase.rpc("create_camera_access_code", {
+      target_request_id: requestId,
+    });
+    if (error) setNotice(`No se pudo generar el código: ${error.message}`);
+    else {
+      setAccessCode(data);
+      setNotice("Comparte este código únicamente con el administrador. Caduca en 10 minutos.");
+    }
+  }
 
   function update(key, value) {
     setConfig(previous => ({ ...previous, [key]: value }));
@@ -89,17 +109,18 @@ function SecurityCenter({ requestId }) {
       <div className="security-layout">
         <article className="camera-panel">
           <div className="camera-topbar">
-            <div><i className={config.cameraUrl ? "online" : ""}/><b>Cámara principal</b></div>
-            <span>{config.cameraUrl ? "EN VIVO" : "SIN CONEXIÓN"}</span>
+            <div><i className={cameraUrl ? "online" : ""}/><b>Cámara principal</b></div>
+            <span>{cameraUrl ? "EN VIVO" : "SIN CONEXIÓN"}</span>
           </div>
           <div className="camera-screen">
-            {config.cameraUrl
-              ? <img src={config.cameraUrl} alt="Transmisión configurada por el usuario" onError={() => setNotice("No se pudo abrir la dirección de la cámara. Revisa la URL o la conexión.")}/>
-              : <div className="camera-placeholder"><span>📷</span><b>Cámara pendiente de conexión</b><p>Introduce la URL proporcionada por el técnico para proyectar la transmisión.</p></div>}
+            {cameraUrl
+              ? <img src={cameraUrl} alt="Transmisión de la cámara del cliente" onError={() => setNotice("No se pudo abrir la cámara. Solicita al administrador que revise la conexión.")}/>
+              : <div className="camera-placeholder"><span>📷</span><b>Cámara pendiente de configuración</b><p>Por seguridad, solamente el administrador puede configurar la dirección de transmisión.</p></div>}
           </div>
-          <div className="camera-config">
-            <input type="url" aria-label="Dirección de la cámara" placeholder="https://dirección-segura-de-la-cámara" value={cameraInput} onChange={event => setCameraInput(event.target.value)}/>
-            <button type="button" onClick={() => update("cameraUrl", cameraInput.trim())}>Conectar</button>
+          <div className="camera-permission">
+            <div><b>Acceso temporal para soporte</b><span>Genera un código si el administrador necesita revisar la cámara.</span></div>
+            {accessCode && <strong>{accessCode}</strong>}
+            <button type="button" onClick={createAccessCode}>{accessCode ? "Generar otro" : "Generar código"}</button>
           </div>
         </article>
 

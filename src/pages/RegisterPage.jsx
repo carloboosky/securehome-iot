@@ -27,6 +27,47 @@ function RegisterPage() {
   const [mensajeGeneral, setMensajeGeneral] = useState("");
   const [cargando, setCargando] = useState(false);
 
+  function validarCampo(name, datos) {
+    const valor = datos[name];
+
+    if (name === "nombre") {
+      if (!valor.trim()) return "El nombre completo es obligatorio.";
+      if (valor.trim().length < 3) return "El nombre debe tener al menos 3 caracteres.";
+    }
+    if (name === "telefono") {
+      if (!valor) return "El teléfono es obligatorio.";
+      if (!/^\d{10}$/.test(valor)) return "El teléfono debe contener exactamente 10 números.";
+      if (!valor.startsWith("09")) return "El teléfono ecuatoriano debe comenzar con 09.";
+    }
+    if (name === "correo") {
+      if (!valor.trim()) return "El correo electrónico es obligatorio.";
+      if (!valor.includes("@")) return "Falta el símbolo @ en el correo.";
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(valor.trim())) {
+        return "Escribe un correo completo, por ejemplo usuario@correo.com.";
+      }
+    }
+    if (name === "password") {
+      if (!valor) return "La contraseña es obligatoria.";
+      const requisitos = [];
+      if (valor.length < 8) requisitos.push("8 caracteres");
+      if (!/[A-Z]/.test(valor)) requisitos.push("una mayúscula");
+      if (!/[a-z]/.test(valor)) requisitos.push("una minúscula");
+      if (!/\d/.test(valor)) requisitos.push("un número");
+      if (!/[!@#$%^&*(),.?":{}|<>_\-+=/\\[\];'`~]/.test(valor)) requisitos.push("un carácter especial");
+      if (requisitos.length) return `Falta: ${requisitos.join(", ")}.`;
+    }
+    if (name === "confirmarPassword") {
+      if (!valor) return "Debes confirmar la contraseña.";
+      if (valor !== datos.password) return "Las contraseñas no coinciden.";
+    }
+    if (name === "planId" && !valor) return "Selecciona el servicio que deseas.";
+    if (name === "direccion") {
+      if (!valor.trim()) return "La dirección de instalación es obligatoria.";
+      if (valor.trim().length < 8) return "Escribe una dirección más completa.";
+    }
+    return "";
+  }
+
   useEffect(() => {
     async function cargarPlanes() {
       const { data, error } = await supabase
@@ -56,15 +97,19 @@ function RegisterPage() {
       nuevoValor = value.replace(/\D/g, "").slice(0, 10);
     }
 
-    setFormulario((anterior) => ({
-      ...anterior,
-      [name]: nuevoValor,
-    }));
+    const siguienteFormulario = { ...formulario, [name]: nuevoValor };
+    setFormulario(siguienteFormulario);
 
-    setErrores((anteriores) => ({
-      ...anteriores,
-      [name]: "",
-    }));
+    setErrores((anteriores) => {
+      const siguientes = {
+        ...anteriores,
+        [name]: validarCampo(name, siguienteFormulario),
+      };
+      if (name === "password" && siguienteFormulario.confirmarPassword) {
+        siguientes.confirmarPassword = validarCampo("confirmarPassword", siguienteFormulario);
+      }
+      return siguientes;
+    });
 
     setMensajeGeneral("");
   }
@@ -320,6 +365,7 @@ function RegisterPage() {
               onChange={manejarCambio}
               placeholder="Carlo Carrión"
               className={errores.nombre ? "input-error" : ""}
+              aria-invalid={Boolean(errores.nombre)}
             />
 
             {errores.nombre && (
@@ -339,6 +385,7 @@ function RegisterPage() {
               inputMode="numeric"
               maxLength={10}
               className={errores.telefono ? "input-error" : ""}
+              aria-invalid={Boolean(errores.telefono)}
             />
 
             {errores.telefono && (
@@ -357,6 +404,7 @@ function RegisterPage() {
               onChange={manejarCambio}
               placeholder="usuario@correo.com"
               className={errores.correo ? "input-error" : ""}
+              aria-invalid={Boolean(errores.correo)}
             />
 
             {errores.correo && (
@@ -375,6 +423,7 @@ function RegisterPage() {
               onChange={manejarCambio}
               placeholder="Mínimo 8 caracteres"
               className={errores.password ? "input-error" : ""}
+              aria-invalid={Boolean(errores.password)}
             />
 
             <small className="password-help">
@@ -399,6 +448,7 @@ function RegisterPage() {
               className={
                 errores.confirmarPassword ? "input-error" : ""
               }
+              aria-invalid={Boolean(errores.confirmarPassword)}
             />
 
             {errores.confirmarPassword && (
@@ -415,6 +465,7 @@ function RegisterPage() {
               value={formulario.planId}
               onChange={manejarCambio}
               className={errores.planId ? "input-error" : ""}
+              aria-invalid={Boolean(errores.planId)}
             >
               <option value="">Selecciona un servicio</option>
 
@@ -454,6 +505,7 @@ function RegisterPage() {
               onChange={manejarCambio}
               placeholder="Ciudad, sector y referencia"
               className={errores.direccion ? "input-error" : ""}
+              aria-invalid={Boolean(errores.direccion)}
             />
 
             {errores.direccion && (

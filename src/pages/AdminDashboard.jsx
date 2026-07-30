@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import RequestChat from "../components/RequestChat";
+import AdminAppointments from "../components/AdminAppointments";
+import AdminCameraAccess from "../components/AdminCameraAccess";
 
 const labels = { pending: "Pendiente", contacted: "Contactado", scheduled: "Programado", installed: "Instalado", cancelled: "Cancelado" };
 
@@ -11,6 +13,7 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [chatRequest, setChatRequest] = useState(null);
+  const [cameraRequest, setCameraRequest] = useState(null);
 
   useEffect(() => {
     async function load() {
@@ -59,16 +62,17 @@ function AdminDashboard() {
         <article className="summary-card"><span>Pendientes</span><b>{pending}</b></article>
         <article className="summary-card"><span>Instalaciones completas</span><b>{installed}</b></article>
       </section>
+      <AdminAppointments />
       <section className="admin-table-wrap">
         {loading ? <div className="dashboard-message">Cargando solicitudes...</div> : requests.length === 0 ? <div className="empty-events"><h3>No hay solicitudes todavía</h3><p>Las nuevas solicitudes aparecerán aquí.</p></div> :
           <table className="admin-table">
-            <thead><tr><th>Cliente</th><th>Plan</th><th>Propiedad</th><th>Dirección</th><th>Fecha</th><th>Estado</th><th>Conversación</th></tr></thead>
+            <thead><tr><th>Cliente</th><th>Plan</th><th>Propiedad</th><th>Dirección</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr></thead>
             <tbody>{requests.map(item => <tr key={item.id}>
               <td><b>{item.profiles?.full_name || "Sin nombre"}</b><br/><small>{item.profiles?.phone || "Sin teléfono"}</small></td>
               <td>{item.service_plans?.name || "Sin plan"}</td><td>{item.property_type}</td><td>{item.installation_address}</td>
               <td>{new Intl.DateTimeFormat("es-EC").format(new Date(item.created_at))}</td>
               <td><select aria-label={`Estado de ${item.profiles?.full_name || "cliente"}`} value={item.status || "pending"} onChange={e => updateStatus(item.id, e.target.value)}>{Object.entries(labels).map(([value,label]) => <option value={value} key={value}>{label}</option>)}</select></td>
-              <td><button type="button" className="table-chat-button" onClick={() => setChatRequest(item)}>Abrir chat</button></td>
+              <td><div className="table-actions"><button type="button" className="table-chat-button" onClick={() => setChatRequest(item)}>Chat</button><button type="button" className="table-camera-button" onClick={() => setCameraRequest(item)}>Cámara</button></div></td>
             </tr>)}</tbody>
           </table>}
       </section>
@@ -80,6 +84,7 @@ function AdminDashboard() {
           <RequestChat requestId={chatRequest.id} role="admin" />
         </section>
       </div>}
+      {cameraRequest && <AdminCameraAccess request={cameraRequest} onClose={() => setCameraRequest(null)} />}
     </main>
   );
 }

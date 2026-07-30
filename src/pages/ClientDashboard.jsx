@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import SecurityCenter from "../components/SecurityCenter";
 import RequestChat from "../components/RequestChat";
+import AppointmentScheduler from "../components/AppointmentScheduler";
 
 function ClientDashboard() {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ function ClientDashboard() {
   const [solicitud, setSolicitud] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [mensaje, setMensaje] = useState("");
+  const [actualizacion, setActualizacion] = useState("");
 
   useEffect(() => {
     async function cargarCliente() {
@@ -79,6 +81,29 @@ function ClientDashboard() {
     cargarCliente();
   }, [navigate]);
 
+  useEffect(() => {
+    if (!solicitud?.id) return undefined;
+
+    const channel = supabase
+      .channel(`request-status-${solicitud.id}`)
+      .on("postgres_changes", {
+        event: "UPDATE",
+        schema: "public",
+        table: "service_requests",
+        filter: `id=eq.${solicitud.id}`,
+      }, payload => {
+        setSolicitud(previous => ({ ...previous, ...payload.new }));
+        setActualizacion(
+          `Tu solicitud cambió a: ${obtenerEstado(payload.new.status)}.`
+        );
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [solicitud?.id]);
+
   async function cerrarSesion() {
     setMensaje("");
 
@@ -144,6 +169,13 @@ function ClientDashboard() {
       {mensaje && (
         <div className="dashboard-message error-message">
           {mensaje}
+        </div>
+      )}
+      {actualizacion && (
+        <div className="realtime-notice" role="status">
+          <span>✓</span>
+          <div><b>Actualización en tiempo real</b><p>{actualizacion}</p></div>
+          <button type="button" aria-label="Cerrar notificación" onClick={() => setActualizacion("")}>×</button>
         </div>
       )}
 
@@ -258,6 +290,10 @@ function ClientDashboard() {
           <section className="events-section chat-section">
             <RequestChat requestId={solicitud.id} role="client" />
           </section>
+
+          {!["installed", "cancelled"].includes(solicitud.status) && (
+            <AppointmentScheduler requestId={solicitud.id} />
+          )}
 
           {solicitud.status === "installed" && (
             <SecurityCenter requestId={solicitud.id} />
