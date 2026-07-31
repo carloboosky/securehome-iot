@@ -121,6 +121,7 @@ function LoginPage() {
               placeholder="Contraseña"
               required
             />
+            <Link className="forgot-password-link" to="/recuperar-contrasena">¿Olvidaste tu contraseña?</Link>
           </label>
 
           {mensaje && <p className="auth-message">{mensaje}</p>}

@@ -6,6 +6,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import HomePage from "./pages/HomePage";
 import AuthCallbackPage from "./pages/AuthCallbackPage";
 import ServiceRequestPage from "./pages/ServiceRequestPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthProvider from "./contexts/AuthContext";
 import "./App.css";
@@ -16,6 +18,8 @@ function App() {
       <AuthProvider><Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/recuperar-contrasena" element={<ForgotPasswordPage />} />
+        <Route path="/restablecer-contrasena" element={<ResetPasswordPage />} />
         <Route path="/registro" element={<RegisterPage />} />
         <Route path="/completar-registro" element={<ProtectedRoute allow="client"><ServiceRequestPage /></ProtectedRoute>} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />

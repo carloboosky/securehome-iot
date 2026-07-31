@@ -3,6 +3,12 @@ import { supabase } from "../lib/supabase";
 import { isAvailableInstallationDate } from "../lib/ecuadorHolidays";
 
 const slots = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00"];
+const MINIMUM_NOTICE_MS = 2 * 60 * 60 * 1000;
+
+function isTooSoon(date, time) {
+  if (!date || !time) return false;
+  return new Date(`${date}T${time}:00`).getTime() < Date.now() + MINIMUM_NOTICE_MS;
+}
 
 function AppointmentScheduler({ requestId }) {
   const [appointment, setAppointment] = useState(null);
@@ -65,6 +71,10 @@ function AppointmentScheduler({ requestId }) {
   async function save() {
     if (!isAvailableInstallationDate(date) || !time) {
       setMessage("Selecciona una fecha laborable y un horario disponible.");
+      return;
+    }
+    if (isTooSoon(date, time)) {
+      setMessage("La instalación debe solicitarse con al menos 2 horas de anticipación.");
       return;
     }
     setSaving(true);
@@ -134,15 +144,21 @@ function AppointmentScheduler({ requestId }) {
           <select value={time} onChange={event => setTime(event.target.value)} disabled={!date}>
             <option value="">Selecciona un horario</option>
             <optgroup label="Mañana · 09:00 a 12:00">
-              {slots.slice(0,3).map(slot => <option value={slot} disabled={occupied.includes(slot)} key={slot}>{slot}{occupied.includes(slot) ? " — Ocupado" : " — Disponible"}</option>)}
+              {slots.slice(0,3).map(slot => {
+                const unavailable = occupied.includes(slot) || isTooSoon(date, slot);
+                return <option value={slot} disabled={unavailable} key={slot}>{slot}{occupied.includes(slot) ? " — Ocupado" : isTooSoon(date, slot) ? " — Requiere 2 horas de anticipación" : " — Disponible"}</option>;
+              })}
             </optgroup>
             <optgroup label="Tarde · 14:00 a 17:00">
-              {slots.slice(3).map(slot => <option value={slot} disabled={occupied.includes(slot)} key={slot}>{slot}{occupied.includes(slot) ? " — Ocupado" : " — Disponible"}</option>)}
+              {slots.slice(3).map(slot => {
+                const unavailable = occupied.includes(slot) || isTooSoon(date, slot);
+                return <option value={slot} disabled={unavailable} key={slot}>{slot}{occupied.includes(slot) ? " — Ocupado" : isTooSoon(date, slot) ? " — Requiere 2 horas de anticipación" : " — Disponible"}</option>;
+              })}
             </optgroup>
           </select>
         </label>
       </div>
-      <p className="appointment-hours">Mañana: 09:00–12:00 · Tarde: 14:00–17:00</p>
+      <p className="appointment-hours">Mañana: 09:00–12:00 · Tarde: 14:00–17:00 · Reserva con mínimo 2 horas de anticipación.</p>
       {message && <p className="appointment-message" role="status">{message}</p>}
       <button type="button" className="appointment-save" disabled={saving || !date || !time} onClick={save}>{saving ? "Guardando..." : appointment && appointment.status !== "cancelled" ? "Reprogramar cita" : "Solicitar cita"}</button>
       </>}

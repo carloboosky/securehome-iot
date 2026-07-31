@@ -104,6 +104,8 @@ input:focus,select:focus,textarea:focus { border-color:var(--blue); box-shadow:0
 .auth-form textarea { min-height:100px; resize:vertical; }
 .auth-form button,.google-button,.auth-card > button { min-height:48px; border:0; border-radius:10px; color:white; background:var(--blue); cursor:pointer; font-weight:800; }
 .auth-form button:disabled,.google-button:disabled { opacity:.6; cursor:not-allowed; }
+.forgot-password-link { justify-self:end; margin-top:1px; font-size:11px; text-decoration:none; }
+.forgot-password-link:hover { text-decoration:underline; }
 .google-button { width:100%; margin-top:24px; color:#28364f; background:white; border:1px solid #d5dce8; }
 .auth-divider { display:flex; align-items:center; gap:12px; margin:22px 0; color:#8a94a7; font-size:12px; }
 .auth-divider::before,.auth-divider::after { content:""; flex:1; height:1px; background:var(--line); }
