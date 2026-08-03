@@ -18,6 +18,10 @@ function mergeCameraCatalog(savedCameras = []) {
   return [...camerasByUrl.values()].sort((first, second) => Number(second.is_active) - Number(first.is_active));
 }
 
+function sortActiveCamerasFirst(cameras) {
+  return [...cameras].sort((first, second) => Number(second.is_active) - Number(first.is_active));
+}
+
 function normalizeCameraAddress(address) {
   const trimmedAddress = address.trim();
   if (!trimmedAddress) return "";
@@ -46,6 +50,7 @@ function AdminCameraAccess({ request, onClose }) {
   const [configurationMessage, setConfigurationMessage] = useState("");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [updatingCameraUrls, setUpdatingCameraUrls] = useState([]);
   const [accessGranted, setAccessGranted] = useState(false);
   const cameraViewRef = useRef(null);
   const accessExpiryRef = useRef(null);
@@ -58,7 +63,12 @@ function AdminCameraAccess({ request, onClose }) {
   }
 
   async function toggleCamera(camera) {
-    setSaving(true);
+    if (updatingCameraUrls.includes(camera.stream_url)) return;
+    const nextActiveState = !camera.is_active;
+    setUpdatingCameraUrls(current => [...current, camera.stream_url]);
+    setConfiguredCameras(sortActiveCamerasFirst(configuredCameras.map(item => (
+      item.stream_url === camera.stream_url ? { ...item, is_active: nextActiveState } : item
+    ))));
     const { error } = camera.is_active
       ? await supabase.rpc("set_camera_active", {
         target_request_id: request.id,
@@ -70,12 +80,15 @@ function AdminCameraAccess({ request, onClose }) {
         target_stream_url: camera.stream_url,
       });
     if (error) {
+      setConfiguredCameras(current => sortActiveCamerasFirst(current.map(item => (
+        item.stream_url === camera.stream_url ? { ...item, is_active: camera.is_active } : item
+      ))));
       setConfigurationMessage(`No se pudo cambiar el estado: ${error.message}`);
     } else {
       setConfigurationMessage(`Cámara ${camera.is_active ? "desactivada" : "activada"} correctamente.`);
       await loadConfiguredCameras();
     }
-    setSaving(false);
+    setUpdatingCameraUrls(current => current.filter(url => url !== camera.stream_url));
   }
 
   useEffect(() => {
@@ -194,7 +207,7 @@ function AdminCameraAccess({ request, onClose }) {
               {configuredCameras.map((camera, index) => <button
                 type="button"
                 className={camera.is_active ? "active" : ""}
-                disabled={saving}
+                disabled={updatingCameraUrls.includes(camera.stream_url)}
                 onClick={() => toggleCamera(camera)}
                 key={camera.stream_url}
               >
