@@ -2,6 +2,22 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { getSecureCameraStreamUrl } from "../lib/secureCamera";
 
+const defaultCameraCatalog = [
+  { name: "Cámara principal AWS", stream_url: "https://iot-security.pro/api/camera/stream", is_active: false },
+  { name: "Cámara AWS 2", stream_url: "https://iot-security.pro/api/camera/stream2", is_active: false },
+  { name: "Cámara IP 3", stream_url: "https://192.168.1.101:8080/stream", is_active: false },
+  { name: "Cámara IP 4", stream_url: "https://192.168.1.102:8080/stream", is_active: false },
+  { name: "Cámara IP 5", stream_url: "https://10.0.0.25:8081/video", is_active: false },
+];
+
+function mergeCameraCatalog(savedCameras = []) {
+  const camerasByUrl = new Map(defaultCameraCatalog.map(camera => [camera.stream_url, camera]));
+  savedCameras.forEach(camera => {
+    camerasByUrl.set(camera.stream_url, { ...camerasByUrl.get(camera.stream_url), ...camera });
+  });
+  return [...camerasByUrl.values()].sort((first, second) => Number(second.is_active) - Number(first.is_active));
+}
+
 function normalizeCameraAddress(address) {
   const trimmedAddress = address.trim();
   if (!trimmedAddress) return "";
@@ -38,16 +54,21 @@ function AdminCameraAccess({ request, onClose }) {
     const { data, error } = await supabase.rpc("list_configured_cameras", {
       target_request_id: request.id,
     });
-    if (!error) setConfiguredCameras(data || []);
+    setConfiguredCameras(mergeCameraCatalog(error ? [] : data));
   }
 
   async function toggleCamera(camera) {
     setSaving(true);
-    const { error } = await supabase.rpc("set_camera_active", {
-      target_request_id: request.id,
-      target_stream_url: camera.stream_url,
-      target_is_active: !camera.is_active,
-    });
+    const { error } = camera.is_active
+      ? await supabase.rpc("set_camera_active", {
+        target_request_id: request.id,
+        target_stream_url: camera.stream_url,
+        target_is_active: false,
+      })
+      : await supabase.rpc("configure_camera_device", {
+        target_request_id: request.id,
+        target_stream_url: camera.stream_url,
+      });
     if (error) {
       setConfigurationMessage(`No se pudo cambiar el estado: ${error.message}`);
     } else {
@@ -61,7 +82,7 @@ function AdminCameraAccess({ request, onClose }) {
     let active = true;
     supabase.rpc("list_configured_cameras", { target_request_id: request.id })
       .then(({ data, error }) => {
-        if (active && !error) setConfiguredCameras(data || []);
+        if (active) setConfiguredCameras(mergeCameraCatalog(error ? [] : data));
       });
     return () => { active = false; };
   }, [request.id]);
