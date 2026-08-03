@@ -7,6 +7,7 @@ function LoginPage() {
 
   const [correo, setCorreo] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [cargando, setCargando] = useState(false);
 
@@ -114,13 +115,16 @@ function LoginPage() {
 
           <label>
             Contraseña
-            <input
-              type="password"
-              value={password}
-              onChange={(evento) => setPassword(evento.target.value)}
-              placeholder="Contraseña"
-              required
-            />
+            <span className="password-input-wrap">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(evento) => setPassword(evento.target.value)}
+                placeholder="Contraseña"
+                required
+              />
+              <button type="button" className="password-visibility-button" aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"} aria-pressed={showPassword} onClick={() => setShowPassword(value => !value)}>{showPassword ? "🙈" : "👁"}</button>
+            </span>
             <Link className="forgot-password-link" to="/recuperar-contrasena">¿Olvidaste tu contraseña?</Link>
           </label>
 

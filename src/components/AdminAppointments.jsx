@@ -12,6 +12,7 @@ const appointmentStatusLabels = {
 function AdminAppointments({ requests }) {
   const [appointments, setAppointments] = useState([]);
   const [error, setError] = useState("");
+  const [expandedAppointmentId, setExpandedAppointmentId] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -88,10 +89,27 @@ function AdminAppointments({ requests }) {
       {!error && appointments.length === 0 ? <p className="empty-appointments">No hay citas solicitadas.</p> :
         <div className="appointment-list">{appointments.map(item => {
           const request = requests.find(requestItem => requestItem.id === item.request_id);
-          return <article key={item.id}>
+          const expanded = expandedAppointmentId === item.id;
+          const formattedDate = new Intl.DateTimeFormat("es-EC", {
+            dateStyle: "full",
+            timeZone: "UTC",
+          }).format(new Date(`${item.appointment_date}T12:00:00Z`));
+          const propertyLabels = { house: "Casa", apartment: "Departamento", business: "Negocio", office: "Oficina" };
+          const requestStatusLabels = { pending: "Pendiente", contacted: "Contactado", scheduled: "Programado", installed: "Instalado", cancelled: "Cancelado" };
+          return <article className={`admin-appointment-item ${expanded ? "expanded" : ""}`} key={item.id} onClick={() => setExpandedAppointmentId(current => current === item.id ? null : item.id)}>
           <div className="appointment-date-box"><b>{new Date(`${item.appointment_date}T12:00:00Z`).getUTCDate()}</b><span>{new Intl.DateTimeFormat("es-EC", { month: "short", timeZone: "UTC" }).format(new Date(`${item.appointment_date}T12:00:00Z`))}</span></div>
-          <div><b>{request?.profiles?.full_name || "Cliente"}</b><span>{item.appointment_time.slice(0,5)} · {request?.installation_address || "Dirección no disponible"}</span><small>{request?.profiles?.phone || "Sin teléfono"}</small></div>
-          <select value={item.status} onChange={event => changeStatus(item.id, event.target.value)}><option value="pending">Por confirmar</option><option value="confirmed">Confirmada</option><option value="completed">Completada</option><option value="cancelled">Cancelada</option></select>
+          <div className="appointment-client-summary"><b>{request?.profiles?.full_name || "Cliente"}</b><span>{item.appointment_time.slice(0,5)} · {request?.installation_address || "Dirección no disponible"}</span><small>{request?.profiles?.phone || "Sin teléfono"}</small><i>{expanded ? "Ocultar información ↑" : "Ver información completa ↓"}</i></div>
+          <select aria-label={`Estado de la cita de ${request?.profiles?.full_name || "cliente"}`} value={item.status} onClick={event => event.stopPropagation()} onChange={event => changeStatus(item.id, event.target.value)}><option value="pending">Por confirmar</option><option value="confirmed">Confirmada</option><option value="completed">Completada</option><option value="cancelled">Cancelada</option></select>
+          {expanded && <div className="appointment-expanded-details" onClick={event => event.stopPropagation()}>
+            <div><span>Cliente</span><b>{request?.profiles?.full_name || "No disponible"}</b></div>
+            <div><span>Teléfono</span><b>{request?.profiles?.phone || "No registrado"}</b></div>
+            <div><span>Servicio contratado</span><b>{request?.service_plans?.name || "No especificado"}</b></div>
+            <div><span>Tipo de propiedad</span><b>{propertyLabels[request?.property_type] || request?.property_type || "No especificado"}</b></div>
+            <div className="wide"><span>Fecha y hora de instalación</span><b className="capitalize">{formattedDate} · {item.appointment_time.slice(0,5)}</b></div>
+            <div className="wide"><span>Lugar de instalación</span><b>{request?.installation_address || "Dirección no disponible"}</b></div>
+            <div><span>Estado de la cita</span><b>{appointmentStatusLabels[item.status] || item.status}</b></div>
+            <div><span>Estado de la solicitud</span><b>{requestStatusLabels[request?.status] || request?.status || "Pendiente"}</b></div>
+          </div>}
         </article>;})}</div>}
     </section>
   );
