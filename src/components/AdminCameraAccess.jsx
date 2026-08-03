@@ -86,7 +86,6 @@ function AdminCameraAccess({ request, onClose }) {
       setConfigurationMessage(`No se pudo cambiar el estado: ${error.message}`);
     } else {
       setConfigurationMessage(`Cámara ${camera.is_active ? "desactivada" : "activada"} correctamente.`);
-      await loadConfiguredCameras();
     }
     setUpdatingCameraUrls(current => current.filter(url => url !== camera.stream_url));
   }
@@ -204,14 +203,14 @@ function AdminCameraAccess({ request, onClose }) {
             <p>Marca las cámaras que tendrá este cliente. Las cámaras activas aparecen primero y una dirección nueva queda disponible para todos los clientes.</p>
             {configuredCameras.length > 0 && <div className="configured-camera-list">
               <b>Cámaras asignadas: {configuredCameras.filter(camera => camera.is_active).length} de {configuredCameras.length} disponibles</b>
-              {configuredCameras.map((camera, index) => <button
+              {configuredCameras.map(camera => <button
                 type="button"
                 className={camera.is_active ? "active" : ""}
                 disabled={updatingCameraUrls.includes(camera.stream_url)}
                 onClick={() => toggleCamera(camera)}
                 key={camera.stream_url}
               >
-                <span>📷</span><span><strong>{camera.is_active ? `Cámara ${index + 1}` : camera.name}</strong><small>{camera.stream_url}</small></span>
+                <span>📷</span><span><strong>{camera.name}</strong><small>{camera.stream_url}</small></span>
                 <i aria-label={camera.is_active ? "Cámara activa" : "Cámara inactiva"}>{camera.is_active ? "✓" : ""}</i>
               </button>)}
               <small>Haz clic para asignar o quitar una cámara. Las marcadas suben automáticamente al inicio.</small>
