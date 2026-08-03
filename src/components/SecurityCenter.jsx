@@ -6,6 +6,8 @@ import { getSecureCameraStreamUrl } from "../lib/secureCamera";
 const ALERTS_URL = "https://iot-security.pro/api/alerts";
 const ALERT_COOLDOWN_MS = 30_000;
 const STREAM_TOKEN_REFRESH_MS = 9 * 60 * 1000;
+const DETECTION_INTERVAL_MS = 500;
+const DETECTION_MAX_WIDTH = 512;
 
 const days = [
   ["lun", "Lun"], ["mar", "Mar"], ["mie", "Mié"], ["jue", "Jue"],
@@ -51,6 +53,7 @@ function SecurityCenter({ requestId }) {
     }
   });
   const [configuredCameraUrl, setConfiguredCameraUrl] = useState("");
+  const [configuredCameras, setConfiguredCameras] = useState([]);
   const [cameraUrl, setCameraUrl] = useState("");
   const [cameraOnline, setCameraOnline] = useState(false);
   const [scheduleDraft, setScheduleDraft] = useState(() => ({
@@ -66,11 +69,13 @@ function SecurityCenter({ requestId }) {
   const [sounding, setSounding] = useState(false);
   const imgRef = useRef(null);
   const canvasRef = useRef(null);
+  const analysisCanvasRef = useRef(null);
   const cameraPanelRef = useRef(null);
   const detectorRef = useRef(null);
   const animationFrameRef = useRef(null);
   const retryTimeoutRef = useRef(null);
   const lastAlertAtRef = useRef(0);
+  const lastDetectionAtRef = useRef(0);
 
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(config));
@@ -83,14 +88,16 @@ function SecurityCenter({ requestId }) {
       .from("camera_devices")
       .select("stream_url")
       .eq("request_id", requestId)
-      .maybeSingle()
+      .order("updated_at", { ascending: true })
       .then(({ data, error }) => {
         if (!active) return;
         if (error) {
           setNotice("No se pudo cargar la dirección configurada de la cámara.");
           return;
         }
-        const savedStreamUrl = data?.stream_url || "";
+        const cameras = data || [];
+        const savedStreamUrl = cameras[0]?.stream_url || "";
+        setConfiguredCameras(cameras);
         setConfiguredCameraUrl(savedStreamUrl);
         if (!savedStreamUrl) setCameraUrl("");
       });
@@ -153,15 +160,23 @@ function SecurityCenter({ requestId }) {
         }
 
         detectorRef.current = detector;
+        analysisCanvasRef.current = document.createElement("canvas");
 
-        function detectFrame() {
+        function detectFrame(timestamp) {
           if (cancelled) return;
 
           const image = imgRef.current;
           const canvas = canvasRef.current;
           const activeDetector = detectorRef.current;
 
+          if (timestamp - lastDetectionAtRef.current < DETECTION_INTERVAL_MS) {
+            animationFrameRef.current = window.requestAnimationFrame(detectFrame);
+            return;
+          }
+          lastDetectionAtRef.current = timestamp;
+
           if (image?.complete && image.naturalWidth > 0 && canvas && activeDetector) {
+            const analysisCanvas = analysisCanvasRef.current;
             const displayWidth = image.clientWidth;
             const displayHeight = image.clientHeight;
             const pixelRatio = window.devicePixelRatio || 1;
@@ -178,13 +193,24 @@ function SecurityCenter({ requestId }) {
             context.clearRect(0, 0, displayWidth, displayHeight);
 
             try {
-              const { detections = [] } = activeDetector.detect(image);
-              const imageScale = Math.min(
-                displayWidth / image.naturalWidth,
-                displayHeight / image.naturalHeight
+              const analysisScale = Math.min(1, DETECTION_MAX_WIDTH / image.naturalWidth);
+              analysisCanvas.width = Math.max(1, Math.round(image.naturalWidth * analysisScale));
+              analysisCanvas.height = Math.max(1, Math.round(image.naturalHeight * analysisScale));
+              analysisCanvas.getContext("2d", { alpha: false }).drawImage(
+                image,
+                0,
+                0,
+                analysisCanvas.width,
+                analysisCanvas.height
               );
-              const renderedWidth = image.naturalWidth * imageScale;
-              const renderedHeight = image.naturalHeight * imageScale;
+
+              const { detections = [] } = activeDetector.detect(analysisCanvas);
+              const imageScale = Math.min(
+                displayWidth / analysisCanvas.width,
+                displayHeight / analysisCanvas.height
+              );
+              const renderedWidth = analysisCanvas.width * imageScale;
+              const renderedHeight = analysisCanvas.height * imageScale;
               const offsetX = (displayWidth - renderedWidth) / 2;
               const offsetY = (displayHeight - renderedHeight) / 2;
 
@@ -254,6 +280,7 @@ function SecurityCenter({ requestId }) {
       }
       detectorRef.current?.close();
       detectorRef.current = null;
+      analysisCanvasRef.current = null;
       animationFrameRef.current = null;
       retryTimeoutRef.current = null;
     };
@@ -409,8 +436,20 @@ function SecurityCenter({ requestId }) {
 
       <div className="security-layout">
         <article className="camera-panel" ref={cameraPanelRef}>
+          {configuredCameras.length > 1 && <div className="camera-switcher client-camera-switcher" aria-label="Tus cámaras">
+            {configuredCameras.map((camera, index) => <button
+              type="button"
+              className={configuredCameraUrl === camera.stream_url ? "selected" : ""}
+              onClick={() => {
+                setCameraOnline(false);
+                setCameraUrl("");
+                setConfiguredCameraUrl(camera.stream_url);
+              }}
+              key={camera.stream_url}
+            >Cámara {index + 1}</button>)}
+          </div>}
           <div className="camera-topbar">
-            <div><i className={cameraOnline ? "online" : ""}/><b>Cámara principal</b></div>
+            <div><i className={cameraOnline ? "online" : ""}/><b>Cámara {Math.max(1, configuredCameras.findIndex(camera => camera.stream_url === configuredCameraUrl) + 1)}</b></div>
             <div className="camera-topbar-actions">
               <span>{cameraOnline ? "EN VIVO" : configuredCameraUrl ? "CONECTANDO" : "SIN CONFIGURAR"}</span>
               {configuredCameraUrl && <button type="button" className="fullscreen-button" onClick={openCameraFullscreen} aria-label="Ver cámara en pantalla completa">⛶ Pantalla completa</button>}
@@ -430,7 +469,7 @@ function SecurityCenter({ requestId }) {
                 onError={retryCameraStream}
               />
               <canvas ref={canvasRef} aria-hidden="true" />
-            </> : <div className="camera-placeholder"><span>📷</span><b>{configuredCameraUrl ? "Cargando cámara segura" : "Cámara pendiente de configuración"}</b><p>{configuredCameraUrl ? "Validando tu sesión y solicitando acceso temporal…" : "El administrador debe asignar una dirección de cámara exclusiva a tu solicitud."}</p></div>}
+            </> : <div className="camera-placeholder"><span>📷</span><b>{configuredCameraUrl ? "Cargando cámara segura" : "Cámara pendiente de configuración"}</b><p>{configuredCameraUrl ? "Validando tu sesión y solicitando acceso temporal…" : "El administrador debe asignar al menos una cámara a tu solicitud."}</p></div>}
           </div>
           <div className="camera-permission">
             <div><b>Acceso temporal para soporte</b><span>El administrador debe solicitar acceso. Recibirás un código nuevo que caduca en 5 minutos.</span></div>

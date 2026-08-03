@@ -10,11 +10,30 @@ const cameraAddressOptions = [
   { name: "Cámara IP 5", url: "https://camera-local.example/live.mjpg" },
 ];
 
+function normalizeCameraAddress(address) {
+  const trimmedAddress = address.trim();
+  if (!trimmedAddress) return "";
+
+  const addressWithProtocol = /^[a-z][a-z\d+.-]*:\/\//i.test(trimmedAddress)
+    ? trimmedAddress
+    : `http://${trimmedAddress}`;
+
+  try {
+    const parsedAddress = new URL(addressWithProtocol);
+    if (!["http:", "https:"].includes(parsedAddress.protocol) || !parsedAddress.hostname) return "";
+    return parsedAddress.toString();
+  } catch {
+    return "";
+  }
+}
+
 function AdminCameraAccess({ request, onClose }) {
   const [streamUrl, setStreamUrl] = useState("");
   const [customAddress, setCustomAddress] = useState(false);
   const [code, setCode] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
+  const [authorizedCameras, setAuthorizedCameras] = useState([]);
+  const [activeCameraUrl, setActiveCameraUrl] = useState("");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [accessGranted, setAccessGranted] = useState(false);
@@ -44,18 +63,30 @@ function AdminCameraAccess({ request, onClose }) {
   }
 
   async function configure() {
-    if (!/^https:\/\//i.test(streamUrl.trim())) {
-      setMessage("La transmisión debe utilizar una dirección HTTPS segura.");
+    const normalizedAddress = normalizeCameraAddress(streamUrl);
+    if (!normalizedAddress) {
+      setMessage("Ingresa una dirección válida, por ejemplo 192.168.1.120:8080/video o https://servidor/stream.");
       return;
     }
     setSaving(true);
     const { error } = await supabase.rpc("configure_camera_device", {
       target_request_id: request.id,
-      target_stream_url: streamUrl.trim(),
+      target_stream_url: normalizedAddress,
     });
-    setMessage(error ? `No se pudo configurar: ${error.message}` : "Cámara configurada. La dirección permanece protegida.");
+    setMessage(error ? `No se pudo configurar: ${error.message}` : "Cámara agregada. El usuario puede tener varias cámaras asociadas.");
     if (!error) setStreamUrl("");
     setSaving(false);
+  }
+
+  async function showAuthorizedCamera(cameraAddress) {
+    setActiveCameraUrl(cameraAddress);
+    try {
+      setVideoUrl(await getSecureCameraStreamUrl(cameraAddress));
+      setMessage("Acceso autorizado durante 5 minutos.");
+    } catch (streamError) {
+      setVideoUrl("");
+      setMessage(`Acceso validado, pero no se pudo abrir la cámara: ${streamError.message}`);
+    }
   }
 
   async function redeem() {
@@ -77,24 +108,22 @@ function AdminCameraAccess({ request, onClose }) {
       setSaving(false);
       return;
     }
-    const { data: camera, error: cameraError } = await supabase.from("camera_devices")
-      .select("stream_url").eq("request_id", request.id).maybeSingle();
+    const { data: cameras, error: cameraError } = await supabase.from("camera_devices")
+      .select("stream_url").eq("request_id", request.id).order("updated_at", { ascending: true });
     setAccessGranted(true);
-    if (cameraError || !camera?.stream_url) {
+    const availableCameras = cameras || [];
+    setAuthorizedCameras(availableCameras);
+    if (cameraError || availableCameras.length === 0) {
       setVideoUrl("");
       setMessage("Acceso autorizado durante 5 minutos. Este cliente todavía no tiene una dirección de cámara configurada.");
     } else {
-      try {
-        setVideoUrl(await getSecureCameraStreamUrl(camera.stream_url));
-        setMessage("Acceso autorizado durante 5 minutos.");
-      } catch (streamError) {
-        setVideoUrl("");
-        setMessage(`Acceso validado, pero no se pudo abrir la cámara: ${streamError.message}`);
-      }
+      await showAuthorizedCamera(availableCameras[0].stream_url);
     }
     if (accessExpiryRef.current) window.clearTimeout(accessExpiryRef.current);
     accessExpiryRef.current = window.setTimeout(() => {
       setVideoUrl("");
+      setAuthorizedCameras([]);
+      setActiveCameraUrl("");
       setAccessGranted(false);
       setMessage("El permiso temporal para ver la cámara ha caducado.");
     }, 5 * 60 * 1000);
@@ -108,7 +137,7 @@ function AdminCameraAccess({ request, onClose }) {
         <div className="camera-admin-body">
           <article>
             <h3>1. Configurar cámara</h3>
-            <p>Selecciona una dirección para este cliente. Solamente la opción con el visto verde está comprobada.</p>
+            <p>Selecciona una dirección para este cliente o agrega la IP de otra cámara. Solamente la opción con el visto verde está comprobada.</p>
             <div className="camera-address-options">
               {cameraAddressOptions.map(option => {
                 const selected = !customAddress && streamUrl === option.url;
@@ -135,7 +164,8 @@ function AdminCameraAccess({ request, onClose }) {
             }}>＋ Agregar una nueva dirección</button>
             {customAddress && <label className="custom-camera-address">
               Nueva dirección de cámara
-              <input autoFocus type="url" placeholder="https://servidor-seguro/transmision" value={streamUrl} onChange={event => setStreamUrl(event.target.value)}/>
+              <input autoFocus type="text" inputMode="url" placeholder="192.168.1.120:8080/video" value={streamUrl} onChange={event => setStreamUrl(event.target.value)}/>
+              <small>Admite direcciones HTTP o HTTPS. Si omites el protocolo, se usará HTTP.</small>
             </label>}
             <button type="button" onClick={configure} disabled={saving || !streamUrl.trim()}>Guardar dirección seleccionada</button>
           </article>
@@ -147,6 +177,14 @@ function AdminCameraAccess({ request, onClose }) {
             <div className="access-code-form"><input inputMode="numeric" maxLength={6} placeholder="000000" value={code} onChange={event => setCode(event.target.value.replace(/\D/g, "").slice(0,6))}/><button type="button" onClick={redeem} disabled={saving}>Validar código</button></div>
           </article>
           {message && <p className="appointment-message">{message}</p>}
+          {accessGranted && authorizedCameras.length > 1 && <div className="camera-switcher" aria-label="Cámaras del cliente">
+            {authorizedCameras.map((camera, index) => <button
+              type="button"
+              className={activeCameraUrl === camera.stream_url ? "selected" : ""}
+              onClick={() => showAuthorizedCamera(camera.stream_url)}
+              key={camera.stream_url}
+            >Cámara {index + 1}</button>)}
+          </div>}
           {videoUrl && <div className="admin-camera-view" ref={cameraViewRef}>
             <button type="button" className="fullscreen-button admin-fullscreen-button" onClick={openFullscreen}>⛶ Pantalla completa</button>
             <img crossOrigin="anonymous" src={videoUrl} alt="Transmisión temporal autorizada por el cliente" onError={() => setMessage("El acceso está autorizado, pero el stream de AWS no está disponible en este momento.")}/>

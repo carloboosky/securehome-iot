@@ -18,6 +18,34 @@ AS $function$
   );
 $function$;
 
+-- La versión inicial permitía una sola fila por solicitud. Quitamos únicamente
+-- esa restricción para conservar las cámaras existentes y admitir más equipos.
+DO $migration$
+DECLARE
+  constraint_name text;
+BEGIN
+  FOR constraint_name IN
+    SELECT con.conname
+    FROM pg_constraint con
+    JOIN pg_class rel ON rel.oid = con.conrelid
+    JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace
+    WHERE nsp.nspname = 'public'
+      AND rel.relname = 'camera_devices'
+      AND con.contype = 'u'
+      AND cardinality(con.conkey) = 1
+      AND EXISTS (
+        SELECT 1
+        FROM pg_attribute att
+        WHERE att.attrelid = rel.oid
+          AND att.attnum = con.conkey[1]
+          AND att.attname = 'request_id'
+      )
+  LOOP
+    EXECUTE format('ALTER TABLE public.camera_devices DROP CONSTRAINT %I', constraint_name);
+  END LOOP;
+END;
+$migration$;
+
 CREATE OR REPLACE FUNCTION public.configure_camera_device(
   target_request_id uuid,
   target_stream_url text
@@ -32,26 +60,23 @@ BEGIN
     RAISE EXCEPTION 'No autorizado';
   END IF;
 
-  IF target_stream_url IS NULL OR trim(target_stream_url) !~ '^https://' THEN
-    RAISE EXCEPTION 'La transmisión debe utilizar HTTPS';
+  IF target_stream_url IS NULL OR trim(target_stream_url) !~* '^https?://[^[:space:]]+$' THEN
+    RAISE EXCEPTION 'La dirección de la cámara debe utilizar HTTP o HTTPS';
   END IF;
 
-  INSERT INTO public.camera_devices (
-    request_id,
-    stream_url,
-    configured_by,
-    updated_at
-  )
-  VALUES (
-    target_request_id,
-    trim(target_stream_url),
-    auth.uid(),
-    now()
-  )
-  ON CONFLICT (request_id) DO UPDATE
-  SET stream_url = EXCLUDED.stream_url,
-      configured_by = auth.uid(),
-      updated_at = now();
+  IF EXISTS (
+    SELECT 1 FROM public.camera_devices
+    WHERE request_id = target_request_id
+      AND stream_url = trim(target_stream_url)
+  ) THEN
+    UPDATE public.camera_devices
+    SET configured_by = auth.uid(), updated_at = now()
+    WHERE request_id = target_request_id
+      AND stream_url = trim(target_stream_url);
+  ELSE
+    INSERT INTO public.camera_devices (request_id, stream_url, configured_by, updated_at)
+    VALUES (target_request_id, trim(target_stream_url), auth.uid(), now());
+  END IF;
 
   RETURN true;
 END;
