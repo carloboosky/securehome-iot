@@ -1,8 +1,9 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { getSecureCameraStreamUrl, PRIMARY_CAMERA_STREAM_URL } from "../lib/secureCamera";
 
 const cameraAddressOptions = [
-  { name: "Cámara principal AWS", url: "https://iot-security.pro/api/camera/stream", verified: true },
+  { name: "Cámara principal AWS", url: PRIMARY_CAMERA_STREAM_URL, verified: true },
   { name: "Cámara IP 2", url: "https://192.168.1.101:8080/stream" },
   { name: "Cámara IP 3", url: "https://192.168.1.102:8080/stream" },
   { name: "Cámara IP 4", url: "https://10.0.0.25:8081/video" },
@@ -18,6 +19,11 @@ function AdminCameraAccess({ request, onClose }) {
   const [saving, setSaving] = useState(false);
   const [accessGranted, setAccessGranted] = useState(false);
   const cameraViewRef = useRef(null);
+  const accessExpiryRef = useRef(null);
+
+  useEffect(() => () => {
+    if (accessExpiryRef.current) window.clearTimeout(accessExpiryRef.current);
+  }, []);
 
   async function openFullscreen() {
     try {
@@ -74,11 +80,20 @@ function AdminCameraAccess({ request, onClose }) {
     const { data: camera, error: cameraError } = await supabase.from("camera_devices")
       .select("stream_url").eq("request_id", request.id).maybeSingle();
     setAccessGranted(true);
-    setVideoUrl(camera?.stream_url || "");
-    setMessage(cameraError || !camera
-      ? "Acceso autorizado durante 5 minutos. Este cliente todavía no tiene una dirección de cámara configurada."
-      : "Acceso autorizado durante 5 minutos.");
-    window.setTimeout(() => {
+    if (cameraError || !camera?.stream_url) {
+      setVideoUrl("");
+      setMessage("Acceso autorizado durante 5 minutos. Este cliente todavía no tiene una dirección de cámara configurada.");
+    } else {
+      try {
+        setVideoUrl(await getSecureCameraStreamUrl(camera.stream_url));
+        setMessage("Acceso autorizado durante 5 minutos.");
+      } catch (streamError) {
+        setVideoUrl("");
+        setMessage(`Acceso validado, pero no se pudo abrir la cámara: ${streamError.message}`);
+      }
+    }
+    if (accessExpiryRef.current) window.clearTimeout(accessExpiryRef.current);
+    accessExpiryRef.current = window.setTimeout(() => {
       setVideoUrl("");
       setAccessGranted(false);
       setMessage("El permiso temporal para ver la cámara ha caducado.");

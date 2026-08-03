@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { FilesetResolver, ObjectDetector } from "@mediapipe/tasks-vision";
 import { supabase } from "../lib/supabase";
+import { getSecureCameraStreamUrl } from "../lib/secureCamera";
 
-const ALERTS_URL = "https://iot-security.pro/api/alerts";
+const ALERTS_URL = "https://api.iot-security.pro/api/alerts";
 const ALERT_COOLDOWN_MS = 30_000;
+const STREAM_TOKEN_REFRESH_MS = 9 * 60 * 1000;
 
 const days = [
   ["lun", "Lun"], ["mar", "Mar"], ["mie", "Mié"], ["jue", "Jue"],
@@ -48,6 +50,7 @@ function SecurityCenter({ requestId }) {
       return defaultConfig;
     }
   });
+  const [configuredCameraUrl, setConfiguredCameraUrl] = useState("");
   const [cameraUrl, setCameraUrl] = useState("");
   const [cameraOnline, setCameraOnline] = useState(false);
   const [scheduleDraft, setScheduleDraft] = useState(() => ({
@@ -87,13 +90,45 @@ function SecurityCenter({ requestId }) {
           setNotice("No se pudo cargar la dirección configurada de la cámara.");
           return;
         }
-        setCameraUrl(data?.stream_url || "");
+        const savedStreamUrl = data?.stream_url || "";
+        setConfiguredCameraUrl(savedStreamUrl);
+        if (!savedStreamUrl) setCameraUrl("");
       });
 
     return () => {
       active = false;
     };
   }, [requestId]);
+
+  useEffect(() => {
+    if (!configuredCameraUrl) {
+      return undefined;
+    }
+
+    let active = true;
+    let refreshTimer;
+
+    async function refreshStreamToken() {
+      try {
+        const secureUrl = await getSecureCameraStreamUrl(configuredCameraUrl);
+        if (!active) return;
+        setCameraUrl(secureUrl);
+        setNotice("");
+        refreshTimer = window.setTimeout(refreshStreamToken, STREAM_TOKEN_REFRESH_MS);
+      } catch (error) {
+        if (!active) return;
+        setCameraOnline(false);
+        setCameraUrl("");
+        setNotice(error.message);
+      }
+    }
+
+    refreshStreamToken();
+    return () => {
+      active = false;
+      if (refreshTimer) window.clearTimeout(refreshTimer);
+    };
+  }, [configuredCameraUrl]);
 
   useEffect(() => {
     let cancelled = false;
@@ -231,9 +266,13 @@ function SecurityCenter({ requestId }) {
       window.clearTimeout(retryTimeoutRef.current);
     }
     retryTimeoutRef.current = window.setTimeout(() => {
-      const retryUrl = new URL(cameraUrl);
-      retryUrl.searchParams.set("t", Date.now().toString());
-      setCameraUrl(retryUrl.toString());
+      getSecureCameraStreamUrl(configuredCameraUrl)
+        .then(secureUrl => {
+          const retryUrl = new URL(secureUrl);
+          retryUrl.searchParams.set("t", Date.now().toString());
+          setCameraUrl(retryUrl.toString());
+        })
+        .catch(error => setNotice(error.message));
       retryTimeoutRef.current = null;
     }, 3000);
   }
@@ -373,8 +412,8 @@ function SecurityCenter({ requestId }) {
           <div className="camera-topbar">
             <div><i className={cameraOnline ? "online" : ""}/><b>Cámara principal</b></div>
             <div className="camera-topbar-actions">
-              <span>{cameraOnline ? "EN VIVO" : cameraUrl ? "CONECTANDO" : "SIN CONFIGURAR"}</span>
-              {cameraUrl && <button type="button" className="fullscreen-button" onClick={openCameraFullscreen} aria-label="Ver cámara en pantalla completa">⛶ Pantalla completa</button>}
+              <span>{cameraOnline ? "EN VIVO" : configuredCameraUrl ? "CONECTANDO" : "SIN CONFIGURAR"}</span>
+              {configuredCameraUrl && <button type="button" className="fullscreen-button" onClick={openCameraFullscreen} aria-label="Ver cámara en pantalla completa">⛶ Pantalla completa</button>}
             </div>
           </div>
           <div className="camera-screen">
@@ -391,7 +430,7 @@ function SecurityCenter({ requestId }) {
                 onError={retryCameraStream}
               />
               <canvas ref={canvasRef} aria-hidden="true" />
-            </> : <div className="camera-placeholder"><span>📷</span><b>Cámara pendiente de configuración</b><p>El administrador debe asignar una dirección de cámara exclusiva a tu solicitud.</p></div>}
+            </> : <div className="camera-placeholder"><span>📷</span><b>{configuredCameraUrl ? "Cargando cámara segura" : "Cámara pendiente de configuración"}</b><p>{configuredCameraUrl ? "Validando tu sesión y solicitando acceso temporal…" : "El administrador debe asignar una dirección de cámara exclusiva a tu solicitud."}</p></div>}
           </div>
           <div className="camera-permission">
             <div><b>Acceso temporal para soporte</b><span>El administrador debe solicitar acceso. Recibirás un código nuevo que caduca en 5 minutos.</span></div>
