@@ -66,6 +66,20 @@ $migration$;
 CREATE UNIQUE INDEX IF NOT EXISTS camera_devices_request_stream_url_key
 ON public.camera_devices (request_id, stream_url);
 
+CREATE OR REPLACE FUNCTION public.list_configured_cameras(target_request_id uuid)
+RETURNS TABLE(stream_url text, updated_at timestamptz)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $function$
+  SELECT camera.stream_url, camera.updated_at
+  FROM public.camera_devices AS camera
+  WHERE camera.request_id = target_request_id
+    AND public.is_admin()
+  ORDER BY camera.updated_at, camera.id;
+$function$;
+
 CREATE OR REPLACE FUNCTION public.configure_camera_device(
   target_request_id uuid,
   target_stream_url text
@@ -172,7 +186,9 @@ USING (
 REVOKE ALL ON FUNCTION public.has_active_camera_access(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.configure_camera_device(uuid, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.redeem_camera_access_code(uuid, text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.list_configured_cameras(uuid) FROM PUBLIC;
 
 GRANT EXECUTE ON FUNCTION public.has_active_camera_access(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.configure_camera_device(uuid, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.redeem_camera_access_code(uuid, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.list_configured_cameras(uuid) TO authenticated;

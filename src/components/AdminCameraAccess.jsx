@@ -33,6 +33,7 @@ function AdminCameraAccess({ request, onClose }) {
   const [code, setCode] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [authorizedCameras, setAuthorizedCameras] = useState([]);
+  const [configuredCameras, setConfiguredCameras] = useState([]);
   const [activeCameraUrl, setActiveCameraUrl] = useState("");
   const [configurationMessage, setConfigurationMessage] = useState("");
   const [message, setMessage] = useState("");
@@ -40,6 +41,22 @@ function AdminCameraAccess({ request, onClose }) {
   const [accessGranted, setAccessGranted] = useState(false);
   const cameraViewRef = useRef(null);
   const accessExpiryRef = useRef(null);
+
+  async function loadConfiguredCameras() {
+    const { data, error } = await supabase.rpc("list_configured_cameras", {
+      target_request_id: request.id,
+    });
+    if (!error) setConfiguredCameras(data || []);
+  }
+
+  useEffect(() => {
+    let active = true;
+    supabase.rpc("list_configured_cameras", { target_request_id: request.id })
+      .then(({ data, error }) => {
+        if (active && !error) setConfiguredCameras(data || []);
+      });
+    return () => { active = false; };
+  }, [request.id]);
 
   useEffect(() => () => {
     if (accessExpiryRef.current) window.clearTimeout(accessExpiryRef.current);
@@ -75,7 +92,11 @@ function AdminCameraAccess({ request, onClose }) {
       target_stream_url: normalizedAddress,
     });
     setConfigurationMessage(error ? `No se pudo guardar: ${error.message}` : "Cámara guardada correctamente. Puedes agregar otra dirección.");
-    if (!error) setStreamUrl("");
+    if (!error) {
+      setStreamUrl("");
+      setCustomAddress(false);
+      await loadConfiguredCameras();
+    }
     setSaving(false);
   }
 
@@ -139,6 +160,12 @@ function AdminCameraAccess({ request, onClose }) {
           <article>
             <h3>1. Configurar cámara</h3>
             <p>Selecciona una dirección para este cliente o agrega la IP de otra cámara. Solamente la opción con el visto verde está comprobada.</p>
+            {configuredCameras.length > 0 && <div className="configured-camera-list">
+              <b>Cámaras guardadas para este usuario</b>
+              {configuredCameras.map((camera, index) => <div key={camera.stream_url}>
+                <span>📷</span><span><strong>Cámara {index + 1}</strong><small>{camera.stream_url}</small></span>
+              </div>)}
+            </div>}
             <div className="camera-address-options">
               {cameraAddressOptions.map(option => {
                 const selected = !customAddress && streamUrl === option.url;
