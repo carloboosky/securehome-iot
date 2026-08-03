@@ -88,6 +88,7 @@ function SecurityCenter({ requestId }) {
       .from("camera_devices")
       .select("stream_url")
       .eq("request_id", requestId)
+      .eq("is_active", true)
       .order("updated_at", { ascending: true })
       .then(({ data, error }) => {
         if (!active) return;

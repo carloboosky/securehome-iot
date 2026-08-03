@@ -49,6 +49,22 @@ function AdminCameraAccess({ request, onClose }) {
     if (!error) setConfiguredCameras(data || []);
   }
 
+  async function toggleCamera(camera) {
+    setSaving(true);
+    const { error } = await supabase.rpc("set_camera_active", {
+      target_request_id: request.id,
+      target_stream_url: camera.stream_url,
+      target_is_active: !camera.is_active,
+    });
+    if (error) {
+      setConfigurationMessage(`No se pudo cambiar el estado: ${error.message}`);
+    } else {
+      setConfigurationMessage(`Cámara ${camera.is_active ? "desactivada" : "activada"} correctamente.`);
+      await loadConfiguredCameras();
+    }
+    setSaving(false);
+  }
+
   useEffect(() => {
     let active = true;
     supabase.rpc("list_configured_cameras", { target_request_id: request.id })
@@ -131,7 +147,7 @@ function AdminCameraAccess({ request, onClose }) {
       return;
     }
     const { data: cameras, error: cameraError } = await supabase.from("camera_devices")
-      .select("stream_url").eq("request_id", request.id).order("updated_at", { ascending: true });
+      .select("stream_url").eq("request_id", request.id).eq("is_active", true).order("updated_at", { ascending: true });
     setAccessGranted(true);
     const availableCameras = cameras || [];
     setAuthorizedCameras(availableCameras);
@@ -161,10 +177,18 @@ function AdminCameraAccess({ request, onClose }) {
             <h3>1. Configurar cámara</h3>
             <p>Selecciona una dirección para este cliente o agrega la IP de otra cámara. Solamente la opción con el visto verde está comprobada.</p>
             {configuredCameras.length > 0 && <div className="configured-camera-list">
-              <b>Cámaras guardadas para este usuario</b>
-              {configuredCameras.map((camera, index) => <div key={camera.stream_url}>
+              <b>Cámaras activas: {configuredCameras.filter(camera => camera.is_active).length} de {configuredCameras.length}</b>
+              {configuredCameras.map((camera, index) => <button
+                type="button"
+                className={camera.is_active ? "active" : ""}
+                disabled={saving}
+                onClick={() => toggleCamera(camera)}
+                key={camera.stream_url}
+              >
                 <span>📷</span><span><strong>Cámara {index + 1}</strong><small>{camera.stream_url}</small></span>
-              </div>)}
+                <i aria-label={camera.is_active ? "Cámara activa" : "Cámara inactiva"}>{camera.is_active ? "✓" : ""}</i>
+              </button>)}
+              <small>Haz clic en una cámara para activarla o desactivarla.</small>
             </div>}
             <div className="camera-address-options">
               {cameraAddressOptions.map(option => {

@@ -339,8 +339,11 @@ input:focus,select:focus,textarea:focus { border-color:var(--blue); box-shadow:0
 .custom-camera-address small { color:var(--muted); font-size:10px; font-weight:500; }
 .configured-camera-list { display:grid; gap:8px; margin:12px 0; padding:12px; border:1px solid #bcd0f7; border-radius:11px; background:#f3f7ff; }
 .configured-camera-list > b { color:var(--navy); font-size:12px; }
-.configured-camera-list > div { display:flex; align-items:center; gap:10px; padding:9px; border-radius:8px; background:white; }
-.configured-camera-list > div > span:last-child { min-width:0; display:grid; gap:2px; }
+.configured-camera-list > button { width:100%; display:grid; grid-template-columns:auto minmax(0,1fr) 24px; align-items:center; gap:10px; padding:9px; border:1px solid #dce4ef; border-radius:8px; color:var(--navy); background:white; cursor:pointer; text-align:left; }
+.configured-camera-list > button.active { border-color:#39b996; background:#f0fff9; }
+.configured-camera-list > button > span:nth-child(2) { min-width:0; display:grid; gap:2px; }
+.configured-camera-list > button i { width:22px; height:22px; display:grid; place-items:center; border:2px solid #aeb9c8; border-radius:6px; color:white; font-style:normal; }
+.configured-camera-list > button.active i { border-color:#18a47d; background:#18a47d; }
 .configured-camera-list strong { font-size:11px; }
 .configured-camera-list small { overflow:hidden; color:var(--muted); font-size:9px; text-overflow:ellipsis; white-space:nowrap; }
 .camera-switcher { display:flex; flex-wrap:wrap; gap:8px; padding:12px; border-radius:11px; background:#eaf0f8; }
