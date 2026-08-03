@@ -34,6 +34,7 @@ function AdminCameraAccess({ request, onClose }) {
   const [videoUrl, setVideoUrl] = useState("");
   const [authorizedCameras, setAuthorizedCameras] = useState([]);
   const [activeCameraUrl, setActiveCameraUrl] = useState("");
+  const [configurationMessage, setConfigurationMessage] = useState("");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [accessGranted, setAccessGranted] = useState(false);
@@ -65,7 +66,7 @@ function AdminCameraAccess({ request, onClose }) {
   async function configure() {
     const normalizedAddress = normalizeCameraAddress(streamUrl);
     if (!normalizedAddress) {
-      setMessage("Ingresa una dirección válida, por ejemplo 192.168.1.120:8080/video o https://servidor/stream.");
+      setConfigurationMessage("Ingresa una dirección válida, por ejemplo 192.168.1.120:8080/video o https://servidor/stream.");
       return;
     }
     setSaving(true);
@@ -73,7 +74,7 @@ function AdminCameraAccess({ request, onClose }) {
       target_request_id: request.id,
       target_stream_url: normalizedAddress,
     });
-    setMessage(error ? `No se pudo configurar: ${error.message}` : "Cámara agregada. El usuario puede tener varias cámaras asociadas.");
+    setConfigurationMessage(error ? `No se pudo guardar: ${error.message}` : "Cámara guardada correctamente. Puedes agregar otra dirección.");
     if (!error) setStreamUrl("");
     setSaving(false);
   }
@@ -147,7 +148,7 @@ function AdminCameraAccess({ request, onClose }) {
                   onClick={() => {
                     setCustomAddress(false);
                     setStreamUrl(option.url);
-                    setMessage("");
+                    setConfigurationMessage("");
                   }}
                   key={option.url}
                 >
@@ -160,7 +161,7 @@ function AdminCameraAccess({ request, onClose }) {
             <button type="button" className="add-camera-address" onClick={() => {
               setCustomAddress(true);
               setStreamUrl("");
-              setMessage("");
+              setConfigurationMessage("");
             }}>＋ Agregar una nueva dirección</button>
             {customAddress && <label className="custom-camera-address">
               Nueva dirección de cámara
@@ -168,6 +169,7 @@ function AdminCameraAccess({ request, onClose }) {
               <small>Admite direcciones HTTP o HTTPS. Si omites el protocolo, se usará HTTP.</small>
             </label>}
             <button type="button" onClick={configure} disabled={saving || !streamUrl.trim()}>Guardar dirección seleccionada</button>
+            {configurationMessage && <p className="appointment-message" role="status">{configurationMessage}</p>}
           </article>
           <article>
             <h3>2. Solicitar acceso al cliente</h3>
