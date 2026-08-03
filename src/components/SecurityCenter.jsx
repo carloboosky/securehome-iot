@@ -3,7 +3,7 @@ import { FilesetResolver, ObjectDetector } from "@mediapipe/tasks-vision";
 import { supabase } from "../lib/supabase";
 import { getSecureCameraStreamUrl } from "../lib/secureCamera";
 
-const ALERTS_URL = "https://api.iot-security.pro/api/alerts";
+const ALERTS_URL = "https://iot-security.pro/api/alerts";
 const ALERT_COOLDOWN_MS = 30_000;
 const STREAM_TOKEN_REFRESH_MS = 9 * 60 * 1000;
 

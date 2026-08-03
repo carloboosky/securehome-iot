@@ -1,13 +1,12 @@
 import { supabase } from "./supabase";
 
-const CAMERA_API_ORIGIN = "https://api.iot-security.pro";
-const LEGACY_STREAM_URL = "https://iot-security.pro/api/camera/stream";
+const CAMERA_API_ORIGIN = "https://iot-security.pro";
 const SECURE_STREAM_URL = `${CAMERA_API_ORIGIN}/api/camera/stream`;
 
 function normalizeStreamUrl(configuredUrl) {
   const trimmedUrl = configuredUrl?.trim();
   if (!trimmedUrl) return "";
-  return trimmedUrl === LEGACY_STREAM_URL ? SECURE_STREAM_URL : trimmedUrl;
+  return trimmedUrl;
 }
 
 function isProtectedBackendStream(streamUrl) {
