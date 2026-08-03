@@ -1,14 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { getSecureCameraStreamUrl, PRIMARY_CAMERA_STREAM_URL } from "../lib/secureCamera";
-
-const cameraAddressOptions = [
-  { name: "Cámara principal AWS", url: PRIMARY_CAMERA_STREAM_URL, verified: true },
-  { name: "Cámara IP 2", url: "https://192.168.1.101:8080/stream" },
-  { name: "Cámara IP 3", url: "https://192.168.1.102:8080/stream" },
-  { name: "Cámara IP 4", url: "https://10.0.0.25:8081/video" },
-  { name: "Cámara IP 5", url: "https://camera-local.example/live.mjpg" },
-];
+import { getSecureCameraStreamUrl } from "../lib/secureCamera";
 
 function normalizeCameraAddress(address) {
   const trimmedAddress = address.trim();
@@ -107,7 +99,7 @@ function AdminCameraAccess({ request, onClose }) {
       target_request_id: request.id,
       target_stream_url: normalizedAddress,
     });
-    setConfigurationMessage(error ? `No se pudo guardar: ${error.message}` : "Cámara guardada correctamente. Puedes agregar otra dirección.");
+    setConfigurationMessage(error ? `No se pudo guardar: ${error.message}` : "Cámara guardada en el catálogo general y asignada a este usuario.");
     if (!error) {
       setStreamUrl("");
       setCustomAddress(false);
@@ -175,9 +167,9 @@ function AdminCameraAccess({ request, onClose }) {
         <div className="camera-admin-body">
           <article>
             <h3>1. Configurar cámara</h3>
-            <p>Selecciona una dirección para este cliente o agrega la IP de otra cámara. Solamente la opción con el visto verde está comprobada.</p>
+            <p>Marca las cámaras que tendrá este cliente. Las cámaras activas aparecen primero y una dirección nueva queda disponible para todos los clientes.</p>
             {configuredCameras.length > 0 && <div className="configured-camera-list">
-              <b>Cámaras activas: {configuredCameras.filter(camera => camera.is_active).length} de {configuredCameras.length}</b>
+              <b>Cámaras asignadas: {configuredCameras.filter(camera => camera.is_active).length} de {configuredCameras.length} disponibles</b>
               {configuredCameras.map((camera, index) => <button
                 type="button"
                 className={camera.is_active ? "active" : ""}
@@ -185,41 +177,22 @@ function AdminCameraAccess({ request, onClose }) {
                 onClick={() => toggleCamera(camera)}
                 key={camera.stream_url}
               >
-                <span>📷</span><span><strong>Cámara {index + 1}</strong><small>{camera.stream_url}</small></span>
+                <span>📷</span><span><strong>{camera.is_active ? `Cámara ${index + 1}` : camera.name}</strong><small>{camera.stream_url}</small></span>
                 <i aria-label={camera.is_active ? "Cámara activa" : "Cámara inactiva"}>{camera.is_active ? "✓" : ""}</i>
               </button>)}
-              <small>Haz clic en una cámara para activarla o desactivarla.</small>
+              <small>Haz clic para asignar o quitar una cámara. Las marcadas suben automáticamente al inicio.</small>
             </div>}
-            <div className="camera-address-options">
-              {cameraAddressOptions.map(option => {
-                const selected = !customAddress && streamUrl === option.url;
-                return <button
-                  type="button"
-                  className={`camera-address-option ${selected ? "selected" : ""}`}
-                  onClick={() => {
-                    setCustomAddress(false);
-                    setStreamUrl(option.url);
-                    setConfigurationMessage("");
-                  }}
-                  key={option.url}
-                >
-                  <span className="camera-address-icon">📡</span>
-                  <span><b>{option.name}</b><small>{option.url}</small></span>
-                  {option.verified ? <i className="verified-address" title="Dirección verificada">✓</i> : <i className="sample-address">Ejemplo</i>}
-                </button>;
-              })}
-            </div>
             <button type="button" className="add-camera-address" onClick={() => {
               setCustomAddress(true);
               setStreamUrl("");
               setConfigurationMessage("");
-            }}>＋ Agregar una nueva dirección</button>
+            }}>＋ Agregar cámara al catálogo general</button>
             {customAddress && <label className="custom-camera-address">
-              Nueva dirección de cámara
+              Nueva dirección para todos los clientes
               <input autoFocus type="text" inputMode="url" placeholder="192.168.1.120:8080/video" value={streamUrl} onChange={event => setStreamUrl(event.target.value)}/>
               <small>Admite direcciones HTTP o HTTPS. Si omites el protocolo, se usará HTTP.</small>
             </label>}
-            <button type="button" onClick={configure} disabled={saving || !streamUrl.trim()}>Guardar dirección seleccionada</button>
+            {customAddress && <button type="button" onClick={configure} disabled={saving || !streamUrl.trim()}>Guardar y asignar cámara</button>}
             {configurationMessage && <p className="appointment-message" role="status">{configurationMessage}</p>}
           </article>
           <article>
