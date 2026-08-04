@@ -154,8 +154,13 @@ function AdminCameraAccess({ request, onClose }) {
 
   async function showAuthorizedCamera(cameraAddress) {
     setActiveCameraUrl(cameraAddress);
+    setVideoUrl("");
+    setMessage("Cargando la cámara seleccionada…");
     try {
-      setVideoUrl(await getSecureCameraStreamUrl(cameraAddress));
+      const secureUrl = await getSecureCameraStreamUrl(cameraAddress);
+      const refreshedUrl = new URL(secureUrl);
+      refreshedUrl.searchParams.set("t", Date.now().toString());
+      setVideoUrl(refreshedUrl.toString());
       setMessage("Acceso autorizado durante 5 minutos.");
     } catch (streamError) {
       setVideoUrl("");
@@ -262,7 +267,7 @@ function AdminCameraAccess({ request, onClose }) {
           </div>}
           {videoUrl && <div className="admin-camera-view" ref={cameraViewRef}>
             <button type="button" className="fullscreen-button admin-fullscreen-button" onClick={openFullscreen}>⛶ Pantalla completa</button>
-            <img crossOrigin="anonymous" src={videoUrl} alt="Transmisión temporal autorizada por el cliente" onError={() => setMessage("El acceso está autorizado, pero el stream de AWS no está disponible en este momento.")}/>
+            <img key={activeCameraUrl} crossOrigin="anonymous" src={videoUrl} alt={`Transmisión temporal de ${activeCameraUrl.includes("stream2") ? "Cámara 2" : "Cámara 1"}`} onError={() => setMessage("El acceso está autorizado, pero el stream de AWS no está disponible en este momento.")}/>
           </div>}
           {accessGranted && !videoUrl && <div className="admin-camera-view empty"><div><span>📷</span><b>Acceso autorizado</b><p>Cámara pendiente de configuración o conexión.</p></div></div>}
         </div>
