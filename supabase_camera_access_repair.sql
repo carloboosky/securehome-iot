@@ -340,3 +340,5 @@ GRANT EXECUTE ON FUNCTION public.list_configured_cameras(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.set_camera_active(uuid, text, boolean) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.save_camera_assignments(uuid, text[]) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.delete_camera_from_catalog(text) TO authenticated;
+
+NOTIFY pgrst, 'reload schema';
