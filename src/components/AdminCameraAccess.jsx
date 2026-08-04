@@ -246,8 +246,8 @@ function AdminCameraAccess({ request, onClose }) {
             <button type="button" className="request-camera-code" onClick={requestAccess} disabled={saving}>Solicitar código al cliente</button>
             <p>Cuando el cliente te comparta el código, ingrésalo aquí:</p>
             <div className="access-code-form"><input inputMode="numeric" maxLength={6} placeholder="000000" value={code} onChange={event => setCode(event.target.value.replace(/\D/g, "").slice(0,6))}/><button type="button" onClick={redeem} disabled={saving}>Validar código</button></div>
+            {message && <p className="appointment-message" role="status">{message}</p>}
           </article>
-          {message && <p className="appointment-message">{message}</p>}
           {accessGranted && authorizedCameras.length > 1 && <div className="camera-switcher" aria-label="Cámaras del cliente">
             {authorizedCameras.map((camera, index) => <button
               type="button"
