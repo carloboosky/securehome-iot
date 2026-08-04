@@ -49,7 +49,8 @@ function AdminCameraAccess({ request, onClose }) {
   const [activeCameraUrl, setActiveCameraUrl] = useState("");
   const [configurationMessage, setConfigurationMessage] = useState("");
   const [message, setMessage] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [cameraSaving, setCameraSaving] = useState(false);
+  const [accessAction, setAccessAction] = useState("");
   const [accessGranted, setAccessGranted] = useState(false);
   const cameraViewRef = useRef(null);
   const accessExpiryRef = useRef(null);
@@ -63,7 +64,7 @@ function AdminCameraAccess({ request, onClose }) {
   }
 
   async function saveCameraSelection() {
-    setSaving(true);
+    setCameraSaving(true);
     const selectedUrls = configuredCameras.filter(camera => camera.is_active).map(camera => camera.stream_url);
     const { error } = await supabase.rpc("save_camera_assignments", {
       target_request_id: request.id,
@@ -77,7 +78,7 @@ function AdminCameraAccess({ request, onClose }) {
         camera.is_active ? { ...camera, is_persisted: true } : camera
       )));
     }
-    setSaving(false);
+    setCameraSaving(false);
   }
 
   async function deleteCamera(camera) {
@@ -90,7 +91,7 @@ function AdminCameraAccess({ request, onClose }) {
       setConfigurationMessage("Dirección nueva descartada correctamente.");
       return;
     }
-    setSaving(true);
+    setCameraSaving(true);
     const { error } = await supabase.rpc("delete_camera_from_catalog", {
       target_stream_url: camera.stream_url,
     });
@@ -100,7 +101,7 @@ function AdminCameraAccess({ request, onClose }) {
       setConfiguredCameras(current => current.filter(item => item.stream_url !== camera.stream_url));
       setConfigurationMessage("Dirección de cámara eliminada correctamente.");
     }
-    setSaving(false);
+    setCameraSaving(false);
   }
 
   useEffect(() => {
@@ -125,13 +126,14 @@ function AdminCameraAccess({ request, onClose }) {
   }
 
   async function requestAccess() {
-    setSaving(true);
+    setAccessAction("requesting");
+    setMessage("");
     const { data, error } = await supabase.rpc("request_camera_access", {
       target_request_id: request.id,
     });
     if (error || !data) setMessage(`No se pudo solicitar acceso: ${error?.message || "Error desconocido"}`);
     else setMessage("Solicitud enviada. El cliente recibió un código urgente que caduca en 5 minutos.");
-    setSaving(false);
+    setAccessAction("");
   }
 
   async function configure() {
@@ -165,7 +167,8 @@ function AdminCameraAccess({ request, onClose }) {
       setMessage("Ingresa el código de 6 números entregado por el cliente.");
       return;
     }
-    setSaving(true);
+    setAccessAction("validating");
+    setMessage("Validando el código…");
     const { data: allowed, error } = await supabase.rpc("redeem_camera_access_code", {
       target_request_id: request.id,
       plain_code: code,
@@ -176,7 +179,7 @@ function AdminCameraAccess({ request, onClose }) {
           ? `No se pudo validar el código: ${error.message}`
           : "El código es incorrecto, ya fue usado, fue reemplazado o caducó."
       );
-      setSaving(false);
+      setAccessAction("");
       return;
     }
     const { data: cameras, error: cameraError } = await supabase.from("camera_devices")
@@ -198,7 +201,7 @@ function AdminCameraAccess({ request, onClose }) {
       setAccessGranted(false);
       setMessage("El permiso temporal para ver la cámara ha caducado.");
     }, 5 * 60 * 1000);
-    setSaving(false);
+    setAccessAction("");
   }
 
   return (
@@ -220,12 +223,12 @@ function AdminCameraAccess({ request, onClose }) {
                   <span>📷</span><span><strong>{camera.name}</strong><small>{camera.stream_url}</small></span>
                   <i aria-label={camera.is_active ? "Cámara activa" : "Cámara inactiva"}>{camera.is_active ? "✓" : ""}</i>
                 </button>
-                {!camera.is_default && <button type="button" className="delete-camera-address" onClick={() => deleteCamera(camera)} disabled={saving} aria-label={`Eliminar ${camera.name}`}>🗑</button>}
+                {!camera.is_default && <button type="button" className="delete-camera-address" onClick={() => deleteCamera(camera)} disabled={cameraSaving} aria-label={`Eliminar ${camera.name}`}>🗑</button>}
               </div>)}
               <small>Haz clic para asignar o quitar una cámara. Las marcadas suben automáticamente al inicio.</small>
             </div>}
-            <button type="button" className="save-camera-selection" onClick={saveCameraSelection} disabled={saving}>
-              {saving ? "Guardando selección…" : "Guardar cámaras seleccionadas"}
+            <button type="button" className="save-camera-selection" onClick={saveCameraSelection} disabled={cameraSaving}>
+              {cameraSaving ? "Guardando selección…" : "Guardar cámaras seleccionadas"}
             </button>
             <button type="button" className="add-camera-address" onClick={() => {
               setCustomAddress(true);
@@ -243,9 +246,9 @@ function AdminCameraAccess({ request, onClose }) {
           <article>
             <h3>2. Solicitar acceso al cliente</h3>
             <p>Envía una solicitud urgente. El cliente recibirá un código nuevo que caduca en 5 minutos.</p>
-            <button type="button" className="request-camera-code" onClick={requestAccess} disabled={saving}>Solicitar código al cliente</button>
+            <button type="button" className="request-camera-code" onClick={requestAccess} disabled={Boolean(accessAction)}>{accessAction === "requesting" ? "Solicitando código…" : "Solicitar código al cliente"}</button>
             <p>Cuando el cliente te comparta el código, ingrésalo aquí:</p>
-            <div className="access-code-form"><input inputMode="numeric" maxLength={6} placeholder="000000" value={code} onChange={event => setCode(event.target.value.replace(/\D/g, "").slice(0,6))}/><button type="button" onClick={redeem} disabled={saving}>Validar código</button></div>
+            <div className="access-code-form"><input inputMode="numeric" maxLength={6} placeholder="000000" value={code} onChange={event => setCode(event.target.value.replace(/\D/g, "").slice(0,6))}/><button type="button" onClick={redeem} disabled={Boolean(accessAction)}>{accessAction === "validating" ? "Validando…" : "Validar código"}</button></div>
             {message && <p className="appointment-message" role="status">{message}</p>}
           </article>
           {accessGranted && authorizedCameras.length > 1 && <div className="camera-switcher" aria-label="Cámaras del cliente">
