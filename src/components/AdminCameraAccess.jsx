@@ -3,17 +3,17 @@ import { supabase } from "../lib/supabase";
 import { getSecureCameraStreamUrl } from "../lib/secureCamera";
 
 const defaultCameraCatalog = [
-  { name: "Cámara principal AWS", stream_url: "https://iot-security.pro/api/camera/stream", is_active: false, is_default: true },
-  { name: "Cámara AWS 2", stream_url: "https://iot-security.pro/api/camera/stream2", is_active: false, is_default: true },
-  { name: "Cámara IP 3", stream_url: "https://192.168.1.101:8080/stream", is_active: false, is_default: true },
-  { name: "Cámara IP 4", stream_url: "https://192.168.1.102:8080/stream", is_active: false, is_default: true },
-  { name: "Cámara IP 5", stream_url: "https://10.0.0.25:8081/video", is_active: false, is_default: true },
+  { name: "Cámara principal AWS", stream_url: "https://iot-security.pro/api/camera/stream", is_active: false, is_default: true, is_persisted: true },
+  { name: "Cámara AWS 2", stream_url: "https://iot-security.pro/api/camera/stream2", is_active: false, is_default: true, is_persisted: true },
+  { name: "Cámara IP 3", stream_url: "https://192.168.1.101:8080/stream", is_active: false, is_default: true, is_persisted: true },
+  { name: "Cámara IP 4", stream_url: "https://192.168.1.102:8080/stream", is_active: false, is_default: true, is_persisted: true },
+  { name: "Cámara IP 5", stream_url: "https://10.0.0.25:8081/video", is_active: false, is_default: true, is_persisted: true },
 ];
 
 function mergeCameraCatalog(savedCameras = []) {
   const camerasByUrl = new Map(defaultCameraCatalog.map(camera => [camera.stream_url, camera]));
   savedCameras.forEach(camera => {
-    camerasByUrl.set(camera.stream_url, { ...camerasByUrl.get(camera.stream_url), ...camera });
+    camerasByUrl.set(camera.stream_url, { ...camerasByUrl.get(camera.stream_url), ...camera, is_persisted: true });
   });
   return [...camerasByUrl.values()].sort((first, second) => Number(second.is_active) - Number(first.is_active));
 }
@@ -72,11 +72,24 @@ function AdminCameraAccess({ request, onClose }) {
     setConfigurationMessage(error
       ? `No se pudo guardar la selección: ${error.message}`
       : `${selectedUrls.length} cámara(s) guardada(s) para este cliente.`);
+    if (!error) {
+      setConfiguredCameras(current => current.map(camera => (
+        camera.is_active ? { ...camera, is_persisted: true } : camera
+      )));
+    }
     setSaving(false);
   }
 
   async function deleteCamera(camera) {
-    if (!window.confirm(`¿Eliminar ${camera.name}?\n\nLa dirección se quitará del catálogo general y de todos los clientes.`)) return;
+    const confirmationDetail = camera.is_persisted
+      ? "La dirección se quitará del catálogo general y de todos los clientes."
+      : "La dirección nueva se descartará de esta selección.";
+    if (!window.confirm(`¿Eliminar ${camera.name}?\n\n${confirmationDetail}`)) return;
+    if (!camera.is_persisted) {
+      setConfiguredCameras(current => current.filter(item => item.stream_url !== camera.stream_url));
+      setConfigurationMessage("Dirección nueva descartada correctamente.");
+      return;
+    }
     setSaving(true);
     const { error } = await supabase.rpc("delete_camera_from_catalog", {
       target_stream_url: camera.stream_url,
@@ -129,7 +142,7 @@ function AdminCameraAccess({ request, onClose }) {
     }
     setConfiguredCameras(current => sortActiveCamerasFirst([
       ...current.filter(camera => camera.stream_url !== normalizedAddress),
-      { name: "Cámara nueva", stream_url: normalizedAddress, is_active: true },
+      { name: "Cámara nueva", stream_url: normalizedAddress, is_active: true, is_persisted: false },
     ]));
     setStreamUrl("");
     setCustomAddress(false);
