@@ -3,11 +3,11 @@ import { supabase } from "../lib/supabase";
 import { getSecureCameraStreamUrl } from "../lib/secureCamera";
 
 const defaultCameraCatalog = [
-  { name: "Cámara principal AWS", stream_url: "https://iot-security.pro/api/camera/stream", is_active: false },
-  { name: "Cámara AWS 2", stream_url: "https://iot-security.pro/api/camera/stream2", is_active: false },
-  { name: "Cámara IP 3", stream_url: "https://192.168.1.101:8080/stream", is_active: false },
-  { name: "Cámara IP 4", stream_url: "https://192.168.1.102:8080/stream", is_active: false },
-  { name: "Cámara IP 5", stream_url: "https://10.0.0.25:8081/video", is_active: false },
+  { name: "Cámara principal AWS", stream_url: "https://iot-security.pro/api/camera/stream", is_active: false, is_default: true },
+  { name: "Cámara AWS 2", stream_url: "https://iot-security.pro/api/camera/stream2", is_active: false, is_default: true },
+  { name: "Cámara IP 3", stream_url: "https://192.168.1.101:8080/stream", is_active: false, is_default: true },
+  { name: "Cámara IP 4", stream_url: "https://192.168.1.102:8080/stream", is_active: false, is_default: true },
+  { name: "Cámara IP 5", stream_url: "https://10.0.0.25:8081/video", is_active: false, is_default: true },
 ];
 
 function mergeCameraCatalog(savedCameras = []) {
@@ -72,6 +72,21 @@ function AdminCameraAccess({ request, onClose }) {
     setConfigurationMessage(error
       ? `No se pudo guardar la selección: ${error.message}`
       : `${selectedUrls.length} cámara(s) guardada(s) para este cliente.`);
+    setSaving(false);
+  }
+
+  async function deleteCamera(camera) {
+    if (!window.confirm(`¿Eliminar ${camera.name}?\n\nLa dirección se quitará del catálogo general y de todos los clientes.`)) return;
+    setSaving(true);
+    const { error } = await supabase.rpc("delete_camera_from_catalog", {
+      target_stream_url: camera.stream_url,
+    });
+    if (error) {
+      setConfigurationMessage(`No se pudo eliminar: ${error.message}`);
+    } else {
+      setConfiguredCameras(current => current.filter(item => item.stream_url !== camera.stream_url));
+      setConfigurationMessage("Dirección de cámara eliminada correctamente.");
+    }
     setSaving(false);
   }
 
@@ -183,15 +198,17 @@ function AdminCameraAccess({ request, onClose }) {
             <p>Marca las cámaras que tendrá este cliente. Las cámaras activas aparecen primero y una dirección nueva queda disponible para todos los clientes.</p>
             {configuredCameras.length > 0 && <div className="configured-camera-list">
               <b>Cámaras asignadas: {configuredCameras.filter(camera => camera.is_active).length} de {configuredCameras.length} disponibles</b>
-              {configuredCameras.map(camera => <button
-                type="button"
-                className={camera.is_active ? "active" : ""}
-                onClick={() => toggleCamera(camera)}
-                key={camera.stream_url}
-              >
-                <span>📷</span><span><strong>{camera.name}</strong><small>{camera.stream_url}</small></span>
-                <i aria-label={camera.is_active ? "Cámara activa" : "Cámara inactiva"}>{camera.is_active ? "✓" : ""}</i>
-              </button>)}
+              {configuredCameras.map(camera => <div className="configured-camera-row" key={camera.stream_url}>
+                <button
+                  type="button"
+                  className={camera.is_active ? "active" : ""}
+                  onClick={() => toggleCamera(camera)}
+                >
+                  <span>📷</span><span><strong>{camera.name}</strong><small>{camera.stream_url}</small></span>
+                  <i aria-label={camera.is_active ? "Cámara activa" : "Cámara inactiva"}>{camera.is_active ? "✓" : ""}</i>
+                </button>
+                {!camera.is_default && <button type="button" className="delete-camera-address" onClick={() => deleteCamera(camera)} disabled={saving} aria-label={`Eliminar ${camera.name}`}>🗑</button>}
+              </div>)}
               <small>Haz clic para asignar o quitar una cámara. Las marcadas suben automáticamente al inicio.</small>
             </div>}
             <button type="button" className="save-camera-selection" onClick={saveCameraSelection} disabled={saving}>

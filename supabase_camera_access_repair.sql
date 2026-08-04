@@ -217,6 +217,38 @@ BEGIN
 END;
 $function$;
 
+CREATE OR REPLACE FUNCTION public.delete_camera_from_catalog(target_stream_url text)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $function$
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'No autorizado';
+  END IF;
+
+  IF target_stream_url IN (
+    'https://iot-security.pro/api/camera/stream',
+    'https://iot-security.pro/api/camera/stream2',
+    'https://192.168.1.101:8080/stream',
+    'https://192.168.1.102:8080/stream',
+    'https://10.0.0.25:8081/video'
+  ) THEN
+    RAISE EXCEPTION 'Las cinco cámaras base no se pueden eliminar';
+  END IF;
+
+  DELETE FROM public.camera_devices WHERE stream_url = target_stream_url;
+  DELETE FROM public.camera_catalog WHERE stream_url = target_stream_url;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Dirección no encontrada';
+  END IF;
+
+  RETURN true;
+END;
+$function$;
+
 CREATE OR REPLACE FUNCTION public.redeem_camera_access_code(
   target_request_id uuid,
   plain_code text
@@ -299,6 +331,7 @@ REVOKE ALL ON FUNCTION public.redeem_camera_access_code(uuid, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.list_configured_cameras(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.set_camera_active(uuid, text, boolean) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.save_camera_assignments(uuid, text[]) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.delete_camera_from_catalog(text) FROM PUBLIC;
 
 GRANT EXECUTE ON FUNCTION public.has_active_camera_access(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.configure_camera_device(uuid, text) TO authenticated;
@@ -306,3 +339,4 @@ GRANT EXECUTE ON FUNCTION public.redeem_camera_access_code(uuid, text) TO authen
 GRANT EXECUTE ON FUNCTION public.list_configured_cameras(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.set_camera_active(uuid, text, boolean) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.save_camera_assignments(uuid, text[]) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.delete_camera_from_catalog(text) TO authenticated;
