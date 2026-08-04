@@ -128,6 +128,7 @@ function AdminCameraAccess({ request, onClose }) {
   async function requestAccess() {
     setAccessAction("requesting");
     setMessage("");
+    setCode("");
     const { data, error } = await supabase.rpc("request_camera_access", {
       target_request_id: request.id,
     });

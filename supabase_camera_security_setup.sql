@@ -1,6 +1,49 @@
 -- VALIDACIÓN DE CÓDIGO TEMPORAL DE CÁMARA
 -- Ejecutar completo en Supabase SQL Editor con Role postgres.
 
+CREATE OR REPLACE FUNCTION public.request_camera_access(target_request_id uuid)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $request_code$
+DECLARE
+  generated_code text;
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'No autorizado';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM public.camera_access_codes
+    WHERE request_id = target_request_id
+      AND used_at IS NULL
+      AND display_code IS NOT NULL
+      AND expires_at > now()
+  ) THEN
+    RETURN true;
+  END IF;
+
+  generated_code := lpad(floor(random() * 1000000)::int::text, 6, '0');
+
+  UPDATE public.camera_access_codes
+  SET used_at = now(), display_code = NULL
+  WHERE request_id = target_request_id
+    AND used_at IS NULL;
+
+  INSERT INTO public.camera_access_codes (request_id, code_hash, display_code, expires_at)
+  VALUES (
+    target_request_id,
+    encode(extensions.digest(generated_code, 'sha256'), 'hex'),
+    generated_code,
+    now() + interval '5 minutes'
+  );
+
+  RETURN true;
+END;
+$request_code$;
+
 CREATE OR REPLACE FUNCTION public.redeem_camera_access_code(
   target_request_id uuid,
   plain_code text
@@ -52,6 +95,8 @@ END;
 $redeem_code$;
 
 REVOKE ALL ON FUNCTION public.redeem_camera_access_code(uuid, text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.request_camera_access(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.redeem_camera_access_code(uuid, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.request_camera_access(uuid) TO authenticated;
 
 NOTIFY pgrst, 'reload schema';
