@@ -238,8 +238,11 @@ BEGIN
     RAISE EXCEPTION 'Las cinco cámaras base no se pueden eliminar';
   END IF;
 
-  DELETE FROM public.camera_devices WHERE stream_url = target_stream_url;
-  DELETE FROM public.camera_catalog WHERE stream_url = target_stream_url;
+  DELETE FROM public.camera_devices
+  WHERE lower(rtrim(trim(stream_url), '/')) = lower(rtrim(trim(target_stream_url), '/'));
+
+  DELETE FROM public.camera_catalog
+  WHERE lower(rtrim(trim(stream_url), '/')) = lower(rtrim(trim(target_stream_url), '/'));
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Dirección no encontrada';

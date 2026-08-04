@@ -97,10 +97,12 @@ BEGIN
     RAISE EXCEPTION 'No autorizado';
   END IF;
 
-  DELETE FROM public.camera_devices WHERE stream_url = target_stream_url;
+  DELETE FROM public.camera_devices
+  WHERE lower(rtrim(trim(stream_url), '/')) = lower(rtrim(trim(target_stream_url), '/'));
   GET DIAGNOSTICS deleted_count = ROW_COUNT;
 
-  DELETE FROM public.camera_catalog WHERE stream_url = target_stream_url;
+  DELETE FROM public.camera_catalog
+  WHERE lower(rtrim(trim(stream_url), '/')) = lower(rtrim(trim(target_stream_url), '/'));
   IF NOT FOUND AND deleted_count = 0 THEN
     RAISE EXCEPTION 'Dirección no encontrada';
   END IF;
