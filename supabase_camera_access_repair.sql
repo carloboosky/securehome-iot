@@ -178,6 +178,45 @@ BEGIN
 END;
 $function$;
 
+CREATE OR REPLACE FUNCTION public.save_camera_assignments(
+  target_request_id uuid,
+  active_stream_urls text[]
+)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $function$
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'No autorizado';
+  END IF;
+
+  INSERT INTO public.camera_catalog (stream_url, name, created_by)
+  SELECT DISTINCT trim(selected_url), 'Cámara disponible', auth.uid()
+  FROM unnest(COALESCE(active_stream_urls, ARRAY[]::text[])) AS selected_url
+  WHERE trim(selected_url) ~* '^https?://[^[:space:]]+$'
+  ON CONFLICT (stream_url) DO NOTHING;
+
+  UPDATE public.camera_devices
+  SET is_active = false,
+      configured_by = auth.uid(),
+      updated_at = now()
+  WHERE request_id = target_request_id;
+
+  INSERT INTO public.camera_devices (request_id, stream_url, is_active, configured_by, updated_at)
+  SELECT target_request_id, trim(selected_url), true, auth.uid(), now()
+  FROM unnest(COALESCE(active_stream_urls, ARRAY[]::text[])) AS selected_url
+  WHERE trim(selected_url) ~* '^https?://[^[:space:]]+$'
+  ON CONFLICT (request_id, stream_url) DO UPDATE
+  SET is_active = true,
+      configured_by = auth.uid(),
+      updated_at = now();
+
+  RETURN true;
+END;
+$function$;
+
 CREATE OR REPLACE FUNCTION public.redeem_camera_access_code(
   target_request_id uuid,
   plain_code text
@@ -259,9 +298,11 @@ REVOKE ALL ON FUNCTION public.configure_camera_device(uuid, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.redeem_camera_access_code(uuid, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.list_configured_cameras(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.set_camera_active(uuid, text, boolean) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.save_camera_assignments(uuid, text[]) FROM PUBLIC;
 
 GRANT EXECUTE ON FUNCTION public.has_active_camera_access(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.configure_camera_device(uuid, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.redeem_camera_access_code(uuid, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.list_configured_cameras(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.set_camera_active(uuid, text, boolean) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.save_camera_assignments(uuid, text[]) TO authenticated;

@@ -50,44 +50,29 @@ function AdminCameraAccess({ request, onClose }) {
   const [configurationMessage, setConfigurationMessage] = useState("");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
-  const [updatingCameraUrls, setUpdatingCameraUrls] = useState([]);
   const [accessGranted, setAccessGranted] = useState(false);
   const cameraViewRef = useRef(null);
   const accessExpiryRef = useRef(null);
 
-  async function loadConfiguredCameras() {
-    const { data, error } = await supabase.rpc("list_configured_cameras", {
-      target_request_id: request.id,
-    });
-    setConfiguredCameras(mergeCameraCatalog(error ? [] : data));
-  }
-
-  async function toggleCamera(camera) {
-    if (updatingCameraUrls.includes(camera.stream_url)) return;
+  function toggleCamera(camera) {
     const nextActiveState = !camera.is_active;
-    setUpdatingCameraUrls(current => [...current, camera.stream_url]);
     setConfiguredCameras(sortActiveCamerasFirst(configuredCameras.map(item => (
       item.stream_url === camera.stream_url ? { ...item, is_active: nextActiveState } : item
     ))));
-    const { error } = camera.is_active
-      ? await supabase.rpc("set_camera_active", {
-        target_request_id: request.id,
-        target_stream_url: camera.stream_url,
-        target_is_active: false,
-      })
-      : await supabase.rpc("configure_camera_device", {
-        target_request_id: request.id,
-        target_stream_url: camera.stream_url,
-      });
-    if (error) {
-      setConfiguredCameras(current => sortActiveCamerasFirst(current.map(item => (
-        item.stream_url === camera.stream_url ? { ...item, is_active: camera.is_active } : item
-      ))));
-      setConfigurationMessage(`No se pudo cambiar el estado: ${error.message}`);
-    } else {
-      setConfigurationMessage(`Cámara ${camera.is_active ? "desactivada" : "activada"} correctamente.`);
-    }
-    setUpdatingCameraUrls(current => current.filter(url => url !== camera.stream_url));
+    setConfigurationMessage("Selección modificada. Pulsa Guardar cámaras seleccionadas para confirmar.");
+  }
+
+  async function saveCameraSelection() {
+    setSaving(true);
+    const selectedUrls = configuredCameras.filter(camera => camera.is_active).map(camera => camera.stream_url);
+    const { error } = await supabase.rpc("save_camera_assignments", {
+      target_request_id: request.id,
+      active_stream_urls: selectedUrls,
+    });
+    setConfigurationMessage(error
+      ? `No se pudo guardar la selección: ${error.message}`
+      : `${selectedUrls.length} cámara(s) guardada(s) para este cliente.`);
+    setSaving(false);
   }
 
   useEffect(() => {
@@ -127,18 +112,13 @@ function AdminCameraAccess({ request, onClose }) {
       setConfigurationMessage("Ingresa una dirección válida, por ejemplo 192.168.1.120:8080/video o https://servidor/stream.");
       return;
     }
-    setSaving(true);
-    const { error } = await supabase.rpc("configure_camera_device", {
-      target_request_id: request.id,
-      target_stream_url: normalizedAddress,
-    });
-    setConfigurationMessage(error ? `No se pudo guardar: ${error.message}` : "Cámara guardada en el catálogo general y asignada a este usuario.");
-    if (!error) {
-      setStreamUrl("");
-      setCustomAddress(false);
-      await loadConfiguredCameras();
-    }
-    setSaving(false);
+    setConfiguredCameras(current => sortActiveCamerasFirst([
+      ...current.filter(camera => camera.stream_url !== normalizedAddress),
+      { name: "Cámara nueva", stream_url: normalizedAddress, is_active: true },
+    ]));
+    setStreamUrl("");
+    setCustomAddress(false);
+    setConfigurationMessage("Cámara añadida a la selección. Pulsa Guardar cámaras seleccionadas para confirmar.");
   }
 
   async function showAuthorizedCamera(cameraAddress) {
@@ -206,7 +186,6 @@ function AdminCameraAccess({ request, onClose }) {
               {configuredCameras.map(camera => <button
                 type="button"
                 className={camera.is_active ? "active" : ""}
-                disabled={updatingCameraUrls.includes(camera.stream_url)}
                 onClick={() => toggleCamera(camera)}
                 key={camera.stream_url}
               >
@@ -215,6 +194,9 @@ function AdminCameraAccess({ request, onClose }) {
               </button>)}
               <small>Haz clic para asignar o quitar una cámara. Las marcadas suben automáticamente al inicio.</small>
             </div>}
+            <button type="button" className="save-camera-selection" onClick={saveCameraSelection} disabled={saving}>
+              {saving ? "Guardando selección…" : "Guardar cámaras seleccionadas"}
+            </button>
             <button type="button" className="add-camera-address" onClick={() => {
               setCustomAddress(true);
               setStreamUrl("");
@@ -225,7 +207,7 @@ function AdminCameraAccess({ request, onClose }) {
               <input autoFocus type="text" inputMode="url" placeholder="192.168.1.120:8080/video" value={streamUrl} onChange={event => setStreamUrl(event.target.value)}/>
               <small>Admite direcciones HTTP o HTTPS. Si omites el protocolo, se usará HTTP.</small>
             </label>}
-            {customAddress && <button type="button" onClick={configure} disabled={saving || !streamUrl.trim()}>Guardar y asignar cámara</button>}
+            {customAddress && <button type="button" onClick={configure} disabled={!streamUrl.trim()}>Añadir a la selección</button>}
             {configurationMessage && <p className="appointment-message" role="status">{configurationMessage}</p>}
           </article>
           <article>

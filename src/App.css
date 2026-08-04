@@ -346,6 +346,7 @@ input:focus,select:focus,textarea:focus { border-color:var(--blue); box-shadow:0
 .configured-camera-list > button.active i { border-color:#18a47d; background:#18a47d; }
 .configured-camera-list strong { font-size:11px; }
 .configured-camera-list small { overflow:hidden; color:var(--muted); font-size:9px; text-overflow:ellipsis; white-space:nowrap; }
+.save-camera-selection { width:100%; margin:0 0 10px; padding:12px 14px!important; background:#08765d!important; }
 .camera-switcher { display:flex; flex-wrap:wrap; gap:8px; padding:12px; border-radius:11px; background:#eaf0f8; }
 .camera-switcher button { padding:8px 13px; border:1px solid #c8d4e5; border-radius:8px; color:var(--navy); background:white; cursor:pointer; font-weight:800; }
 .camera-switcher button.selected { border-color:var(--blue); color:white; background:var(--blue); }
