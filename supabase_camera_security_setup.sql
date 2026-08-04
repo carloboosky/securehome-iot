@@ -22,6 +22,19 @@ BEGIN
       AND display_code IS NOT NULL
       AND expires_at > now()
   ) THEN
+    UPDATE public.camera_access_codes
+    SET expires_at = now() + interval '5 minutes',
+        created_at = now()
+    WHERE id = (
+      SELECT id
+      FROM public.camera_access_codes
+      WHERE request_id = target_request_id
+        AND used_at IS NULL
+        AND display_code IS NOT NULL
+        AND expires_at > now()
+      ORDER BY created_at DESC
+      LIMIT 1
+    );
     RETURN true;
   END IF;
 

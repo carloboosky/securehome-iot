@@ -294,7 +294,7 @@ function SecurityCenter({ requestId }) {
       window.clearTimeout(retryTimeoutRef.current);
     }
     retryTimeoutRef.current = window.setTimeout(() => {
-      getSecureCameraStreamUrl(configuredCameraUrl)
+      getSecureCameraStreamUrl(configuredCameraUrl, { forceRefresh: true })
         .then(secureUrl => {
           const retryUrl = new URL(secureUrl);
           retryUrl.searchParams.set("t", Date.now().toString());
@@ -315,7 +315,11 @@ function SecurityCenter({ requestId }) {
 
   useEffect(() => {
     function receiveCode(code) {
-      if (!code?.display_code) return;
+      if (!code?.display_code || code.used_at) {
+        setAccessCode("");
+        setAccessExpires("");
+        return;
+      }
       setAccessCode(code.display_code);
       setAccessExpires(code.expires_at);
       setUrgentDismissed(false);
@@ -328,7 +332,7 @@ function SecurityCenter({ requestId }) {
     }
 
     supabase.from("camera_access_codes")
-      .select("display_code,expires_at")
+      .select("display_code,expires_at,used_at")
       .eq("request_id", requestId)
       .is("used_at", null)
       .gt("expires_at", new Date().toISOString())
@@ -339,7 +343,7 @@ function SecurityCenter({ requestId }) {
 
     const channel = supabase.channel(`camera-code-${requestId}`)
       .on("postgres_changes", {
-        event: "INSERT",
+        event: "*",
         schema: "public",
         table: "camera_access_codes",
         filter: `request_id=eq.${requestId}`,

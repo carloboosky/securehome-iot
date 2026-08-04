@@ -24,7 +24,7 @@ function isProtectedBackendStream(streamUrl) {
   }
 }
 
-export async function getSecureCameraStreamUrl(configuredUrl) {
+export async function getSecureCameraStreamUrl(configuredUrl, { forceRefresh = false } = {}) {
   const streamUrl = normalizeStreamUrl(configuredUrl);
   if (!streamUrl) throw new Error("Esta cámara todavía no tiene una dirección configurada.");
 
@@ -36,7 +36,8 @@ export async function getSecureCameraStreamUrl(configuredUrl) {
     throw new Error("Tu sesión caducó. Inicia sesión nuevamente para ver la cámara.");
   }
 
-  const canReuseToken = cachedStreamToken
+  const canReuseToken = !forceRefresh
+    && cachedStreamToken
     && cachedForAccessToken === session.access_token
     && Date.now() < streamTokenExpiresAt;
 
