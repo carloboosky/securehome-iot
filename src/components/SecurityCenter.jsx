@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { FilesetResolver, ObjectDetector } from "@mediapipe/tasks-vision";
-import { BellRing, CalendarDays, Check, Clock3, Info, Maximize, Moon, Nfc, PawPrint, Phone, Power, Radio, Send, ShieldCheck, Sun, TriangleAlert, Users, Video } from "lucide-react";
+import { BellRing, Info, Maximize, Nfc, PawPrint, Power, Radio, Send, ShieldCheck, TriangleAlert, Users, Video } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { getSecureCameraStreamUrl } from "../lib/secureCamera";
 
@@ -11,32 +11,10 @@ const STREAM_TOKEN_REFRESH_MS = 9 * 60 * 1000;
 const DETECTION_INTERVAL_MS = 500;
 const DETECTION_MAX_WIDTH = 512;
 
-const days = [
-  ["lun", "Lun"], ["mar", "Mar"], ["mie", "Mié"], ["jue", "Jue"],
-  ["vie", "Vie"], ["sab", "Sáb"], ["dom", "Dom"],
-];
-
-const timeOptions = Array.from({ length: 48 }, (_, index) => {
-  const hours = String(Math.floor(index / 2)).padStart(2, "0");
-  const minutes = index % 2 ? "30" : "00";
-  return `${hours}:${minutes}`;
-});
-
-function normalizeTime(value, fallback) {
-  if (!/^\d{2}:\d{2}$/.test(value || "")) return fallback;
-  const [hours, minutes] = value.split(":").map(Number);
-  const roundedSlots = Math.round((hours * 60 + minutes) / 30) % 48;
-  return timeOptions[roundedSlots];
-}
-
 const defaultConfig = {
   armed: false,
   nfcDoor: false,
   telegram: false,
-  mode: "always",
-  days: ["lun", "mar", "mie", "jue", "vie", "sab", "dom"],
-  start: "20:00",
-  end: "07:00",
 };
 
 function SecurityCenter({ requestId }) {
@@ -44,12 +22,7 @@ function SecurityCenter({ requestId }) {
   const [config, setConfig] = useState(() => {
     try {
       const stored = JSON.parse(localStorage.getItem(storageKey)) || {};
-      return {
-        ...defaultConfig,
-        ...stored,
-        start: normalizeTime(stored.start, defaultConfig.start),
-        end: normalizeTime(stored.end, defaultConfig.end),
-      };
+      return { ...defaultConfig, ...stored };
     } catch {
       return defaultConfig;
     }
@@ -60,20 +33,11 @@ function SecurityCenter({ requestId }) {
   const [cameraOnline, setCameraOnline] = useState(false);
   const [secondaryCameraUrl, setSecondaryCameraUrl] = useState("");
   const [secondaryCameraOnline, setSecondaryCameraOnline] = useState(false);
-  const [scheduleDraft, setScheduleDraft] = useState(() => ({
-    mode: config.mode,
-    days: config.days,
-    start: config.start,
-    end: config.end,
-  }));
   const [accessCode, setAccessCode] = useState("");
   const [accessExpires, setAccessExpires] = useState("");
   const [urgentDismissed, setUrgentDismissed] = useState(false);
   const [notice, setNotice] = useState("");
   const [sounding, setSounding] = useState(false);
-  const [phone, setPhone] = useState("");
-  const [phoneError, setPhoneError] = useState("");
-  const [savingPhone, setSavingPhone] = useState(false);
   const [telegramChatId, setTelegramChatId] = useState("");
   const [linkingTelegram, setLinkingTelegram] = useState(false);
   const [residents, setResidents] = useState([]);
@@ -102,20 +66,6 @@ function SecurityCenter({ requestId }) {
     localStorage.setItem(storageKey, JSON.stringify(config));
     localStorage.setItem("home_mode", config.armed ? "AUSENTE" : "EN_CASA");
   }, [config, storageKey]);
-
-  useEffect(() => {
-    let active = true;
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) return;
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("phone")
-        .eq("id", data.user.id)
-        .maybeSingle();
-      if (active) setPhone(profile?.phone || data.user.user_metadata?.phone || "");
-    });
-    return () => { active = false; };
-  }, []);
 
   useEffect(() => {
     let active = true;
@@ -488,25 +438,6 @@ function SecurityCenter({ requestId }) {
     setNotice("Configuración guardada en este dispositivo.");
   }
 
-  async function savePhone() {
-    if (!/^09\d{8}$/.test(phone)) {
-      setPhoneError("Ingresa un celular ecuatoriano válido de 10 dígitos que comience con 09.");
-      return;
-    }
-    setSavingPhone(true);
-    setPhoneError("");
-    const { data: { user } } = await supabase.auth.getUser();
-    const { error } = user
-      ? await supabase.from("profiles").update({ phone }).eq("id", user.id)
-      : { error: new Error("Tu sesión caducó.") };
-    setSavingPhone(false);
-    if (error) {
-      setPhoneError(`No se pudo guardar: ${error.message}`);
-      return;
-    }
-    setNotice("Número de celular guardado correctamente.");
-  }
-
   async function linkTelegramPhone(event) {
     event.preventDefault();
     const cleanChatId = telegramChatId.trim();
@@ -623,35 +554,6 @@ function SecurityCenter({ requestId }) {
     setPets(previous => previous.filter(item => item.id !== pet.id));
   }
 
-  function toggleDay(day) {
-    setScheduleDraft(previous => ({
-      ...previous,
-      days: previous.days.includes(day)
-        ? previous.days.filter(item => item !== day)
-        : [...previous.days, day],
-    }));
-  }
-
-  function confirmAllDay() {
-    setConfig(previous => ({ ...previous, mode: "always" }));
-    setNotice("Horario confirmado: el sistema protegerá tu hogar todo el día.");
-  }
-
-  function confirmCustomSchedule() {
-    if (scheduleDraft.days.length === 0) {
-      setNotice("Selecciona al menos un día para confirmar el horario.");
-      return;
-    }
-    setConfig(previous => ({
-      ...previous,
-      mode: "custom",
-      days: scheduleDraft.days,
-      start: scheduleDraft.start,
-      end: scheduleDraft.end,
-    }));
-    setNotice(`Horario personalizado confirmado: ${scheduleDraft.start} a ${scheduleDraft.end}.`);
-  }
-
   function testAlarm() {
     setSounding(true);
     setNotice("Prueba de sirena en este dispositivo. Esto no activa todavía la sirena física.");
@@ -751,18 +653,6 @@ function SecurityCenter({ requestId }) {
               <a className="primary" href="https://t.me/Iotsecurity_g5_bot" target="_blank" rel="noreferrer"><Send aria-hidden="true"/> Abrir @Iotsecurity_g5_bot</a>
             </div>
           </article>
-          <article className="control-card phone-control-card">
-            <span className="control-icon"><Phone aria-hidden="true"/></span>
-            <div><h3>Número para notificaciones</h3><p>Completa el celular asociado a tus alertas.</p></div>
-            <div className="phone-control-form">
-              <input aria-label="Número de celular" inputMode="numeric" maxLength={10} placeholder="09XXXXXXXX" value={phone} onChange={event => {
-                setPhone(event.target.value.replace(/\D/g, "").slice(0, 10));
-                setPhoneError("");
-              }}/>
-              <button type="button" onClick={savePhone} disabled={savingPhone}>{savingPhone ? "Guardando…" : "Guardar"}</button>
-              {phoneError && <small className="field-error" role="alert">{phoneError}</small>}
-            </div>
-          </article>
           <article className="control-card">
             <span className="control-icon"><Radio aria-hidden="true"/></span>
             <div><h3>Sensores</h3><p>Los sensores se vinculan durante la instalación.</p></div>
@@ -808,32 +698,6 @@ function SecurityCenter({ requestId }) {
         <span><TriangleAlert aria-hidden="true"/></span><div><b>Solicitud urgente de acceso a cámara</b><p>Comparte este código únicamente con el administrador. Caduca en 5 minutos y funciona una sola vez.</p><strong>{accessCode}</strong></div>
       </aside>}
 
-      <article className="schedule-card">
-        <div className="schedule-title"><span><Clock3 aria-hidden="true"/></span><div><h3>Horario de protección</h3><p>Decide cuándo se activará automáticamente el sistema.</p></div></div>
-        <div className="mode-buttons">
-          <button type="button" className={scheduleDraft.mode === "always" ? "selected" : ""} onClick={() => setScheduleDraft(previous => ({ ...previous, mode: "always" }))}><span><Sun aria-hidden="true"/></span><b>Todo el día</b><small>Protección continua 24/7</small></button>
-          <button type="button" className={scheduleDraft.mode === "custom" ? "selected" : ""} onClick={() => setScheduleDraft(previous => ({ ...previous, mode: "custom" }))}><span><CalendarDays aria-hidden="true"/></span><b>Personalizado</b><small>Elige días y horas</small></button>
-        </div>
-        {scheduleDraft.mode === "always" && <div className="all-day-schedule">
-          <span><ShieldCheck aria-hidden="true"/></span>
-          <div><b>Protección activa las 24 horas</b><p>El sistema permanecerá preparado todos los días, sin interrupciones.</p></div>
-          <button type="button" onClick={confirmAllDay}>{config.mode === "always" ? "Confirmar nuevamente" : "Confirmar todo el día"}</button>
-        </div>}
-        {scheduleDraft.mode === "custom" && <div className="custom-schedule">
-          <div className="schedule-days">
-            <span>Días activos</span>
-            <div className="day-picker">{days.map(([value, label]) => <button type="button" aria-label={value} className={scheduleDraft.days.includes(value) ? "selected" : ""} onClick={() => toggleDay(value)} key={value}><i><Check aria-hidden="true"/></i>{label}</button>)}</div>
-          </div>
-          <div className="time-range">
-            <label><span><Moon aria-hidden="true"/> Hora de inicio</span><select value={scheduleDraft.start} onChange={event => setScheduleDraft(previous => ({ ...previous, start: event.target.value }))}>{timeOptions.map(time => <option value={time} key={time}>{time}</option>)}</select></label>
-            <b>→</b>
-            <label><span><Sun aria-hidden="true"/> Hora de fin</span><select value={scheduleDraft.end} onChange={event => setScheduleDraft(previous => ({ ...previous, end: event.target.value }))}>{timeOptions.map(time => <option value={time} key={time}>{time}</option>)}</select></label>
-          </div>
-          <p className="schedule-summary"><ShieldCheck aria-hidden="true"/> El sistema se activará de <strong>{scheduleDraft.start}</strong> a <strong>{scheduleDraft.end}</strong> los días seleccionados.</p>
-          <button type="button" className="confirm-schedule-button" onClick={confirmCustomSchedule}><Check aria-hidden="true"/> Confirmar horario personalizado</button>
-        </div>}
-        <p className="saved-schedule">Configuración guardada: <strong>{config.mode === "always" ? "protección todo el día" : `${config.start} a ${config.end}`}</strong></p>
-      </article>
       <p className="integration-note">Los ajustes se guardan en este navegador. Para controlar la cámara, sirena, NFC y Telegram físicamente, el técnico debe conectar la API del equipo instalado.</p>
     </section>
   );
