@@ -27,8 +27,6 @@ function RegisterPage() {
   const [errores, setErrores] = useState({});
   const [mensajeGeneral, setMensajeGeneral] = useState("");
   const [cargando, setCargando] = useState(false);
-  const [esperandoCodigo, setEsperandoCodigo] = useState(false);
-  const [codigoVerificacion, setCodigoVerificacion] = useState("");
 
   function validarCampo(name, datos) {
     const valor = datos[name];
@@ -277,43 +275,6 @@ function RegisterPage() {
     if (error) throw new Error(`La cuenta se verificó, pero la solicitud no pudo guardarse: ${error.message}`);
   }
 
-  async function verificarCodigo(evento) {
-    evento.preventDefault();
-    if (!/^\d{6}$/.test(codigoVerificacion)) {
-      setMensajeGeneral("Ingresa el código de 6 números enviado a tu correo.");
-      return;
-    }
-    setCargando(true);
-    setMensajeGeneral("");
-    const { data, error } = await supabase.auth.verifyOtp({
-      email: formulario.correo.trim().toLowerCase(),
-      token: codigoVerificacion,
-      type: "signup",
-    });
-    if (error || !data.user) {
-      setMensajeGeneral(error?.message || "El código no es válido o ya caducó.");
-      setCargando(false);
-      return;
-    }
-    try {
-      await crearSolicitud(data.user);
-      navigate("/disena-tu-sistema", { replace: true });
-    } catch (solicitudError) {
-      setMensajeGeneral(solicitudError.message);
-      setCargando(false);
-    }
-  }
-
-  async function reenviarCodigo() {
-    setCargando(true);
-    const { error } = await supabase.auth.resend({
-      type: "signup",
-      email: formulario.correo.trim().toLowerCase(),
-    });
-    setMensajeGeneral(error ? `No se pudo reenviar: ${error.message}` : "Enviamos un código nuevo a tu correo.");
-    setCargando(false);
-  }
-
   async function registrarUsuario(evento) {
     evento.preventDefault();
     setMensajeGeneral("");
@@ -333,6 +294,7 @@ function RegisterPage() {
       email: formulario.correo.trim().toLowerCase(),
       password: formulario.password,
       options: {
+        emailRedirectTo: `${window.location.origin}/login`,
         data: {
           full_name: formulario.nombre.trim(),
           phone: formulario.telefono,
@@ -343,9 +305,20 @@ function RegisterPage() {
     });
 
     if (error) {
-      const mensajeError = error.message.toLowerCase();
+      console.error("Error de Supabase al registrar:", {
+        name: error.name,
+        message: error.message,
+        code: error.code,
+        status: error.status,
+      });
+      const detalleError = typeof error.message === "string" && error.message !== "{}"
+        ? error.message
+        : error.code || (error.status ? `Error ${error.status} de Supabase` : "Supabase rechazó la creación de la cuenta");
+      const mensajeError = detalleError.toLowerCase();
 
-      if (mensajeError.includes("already registered")) {
+      if (mensajeError.includes("signup") && mensajeError.includes("disabled")) {
+        setMensajeGeneral("El registro por correo está desactivado en Supabase. Activa Email y Allow new users to sign up.");
+      } else if (mensajeError.includes("already registered")) {
         setErrores((anteriores) => ({
           ...anteriores,
           correo: "Este correo ya está registrado.",
@@ -353,17 +326,15 @@ function RegisterPage() {
       } else if (mensajeError.includes("password")) {
         setErrores((anteriores) => ({
           ...anteriores,
-          password: error.message,
+          password: detalleError,
         }));
       } else if (mensajeError.includes("email")) {
         setErrores((anteriores) => ({
           ...anteriores,
-          correo: error.message,
+          correo: detalleError,
         }));
       } else {
-        setMensajeGeneral(
-          `Error al crear la cuenta: ${error.message}`
-        );
+        setMensajeGeneral(`Error al crear la cuenta: ${detalleError}${error.status ? ` (estado ${error.status})` : ""}`);
       }
 
       setCargando(false);
@@ -379,8 +350,7 @@ function RegisterPage() {
     }
 
     if (!data.session) {
-      setEsperandoCodigo(true);
-      setMensajeGeneral("Te enviamos un código de 6 números. Escríbelo para validar tu cuenta.");
+      setMensajeGeneral("Cuenta creada. Revisa tu correo y abre el enlace de confirmación; después podrás iniciar sesión.");
       setCargando(false);
       return;
     }
@@ -404,30 +374,20 @@ function RegisterPage() {
 
         <p>Solicita tu sistema de seguridad SecureHome IoT.</p>
 
-        {!esperandoCodigo && <button
+        <button
           type="button"
           className="google-button"
           onClick={registrarseConGoogle}
           disabled={cargando}
         >
           {cargando ? "Abriendo Google..." : "Continuar con Google"}
-        </button>}
+        </button>
 
-        {!esperandoCodigo && <div className="auth-divider">
+        <div className="auth-divider">
           <span>o regístrate con correo</span>
-        </div>}
+        </div>
 
-        {esperandoCodigo ? <form className="auth-form verification-form" onSubmit={verificarCodigo} noValidate>
-          <label>
-            Código de verificación
-            <input autoFocus inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="000000" value={codigoVerificacion} onChange={evento => setCodigoVerificacion(evento.target.value.replace(/\D/g, "").slice(0, 6))}/>
-            <small>Lo enviamos a {formulario.correo.trim().toLowerCase()}.</small>
-          </label>
-          {mensajeGeneral && <p className="auth-message" role="status">{mensajeGeneral}</p>}
-          <button type="submit" disabled={cargando}>{cargando ? "Verificando…" : "Verificar y crear cuenta"}</button>
-          <button type="button" className="secondary-auth-button" onClick={reenviarCodigo} disabled={cargando}>Reenviar código</button>
-          <button type="button" className="auth-text-button" onClick={() => { setEsperandoCodigo(false); setCodigoVerificacion(""); setMensajeGeneral(""); }}>Corregir mis datos</button>
-        </form> : <form
+        <form
           onSubmit={registrarUsuario}
           className="auth-form"
           noValidate
@@ -645,7 +605,7 @@ function RegisterPage() {
           <button type="submit" disabled={cargando}>
             {cargando ? "Creando cuenta..." : "Crear cuenta"}
           </button>
-        </form>}
+        </form>
 
         <p>
           ¿Ya tienes una cuenta?{" "}
