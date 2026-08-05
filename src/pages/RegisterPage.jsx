@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 function RegisterPage() {
@@ -27,6 +28,8 @@ function RegisterPage() {
   const [errores, setErrores] = useState({});
   const [mensajeGeneral, setMensajeGeneral] = useState("");
   const [cargando, setCargando] = useState(false);
+  const [mostrarPassword, setMostrarPassword] = useState(false);
+  const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
 
   function validarCampo(name, datos) {
     const valor = datos[name];
@@ -451,15 +454,20 @@ function RegisterPage() {
 
           <label>
             Contraseña
-            <input
-              type="password"
-              name="password"
-              value={formulario.password}
-              onChange={manejarCambio}
-              placeholder="Mínimo 8 caracteres"
-              className={errores.password ? "input-error" : ""}
-              aria-invalid={Boolean(errores.password)}
-            />
+            <span className="password-input-wrap">
+              <input
+                type={mostrarPassword ? "text" : "password"}
+                name="password"
+                value={formulario.password}
+                onChange={manejarCambio}
+                placeholder="Mínimo 8 caracteres"
+                className={errores.password ? "input-error" : ""}
+                aria-invalid={Boolean(errores.password)}
+              />
+              <button type="button" className="password-visibility-button" aria-label={mostrarPassword ? "Ocultar contraseña" : "Mostrar contraseña"} aria-pressed={mostrarPassword} onClick={() => setMostrarPassword(valor => !valor)}>
+                {mostrarPassword ? <EyeOff aria-hidden="true"/> : <Eye aria-hidden="true"/>}
+              </button>
+            </span>
 
             <small className="password-help">
               Debe tener 8 caracteres, mayúscula, minúscula,
@@ -475,17 +483,22 @@ function RegisterPage() {
 
           <label>
             Confirmar contraseña
-            <input
-              type="password"
-              name="confirmarPassword"
-              value={formulario.confirmarPassword}
-              onChange={manejarCambio}
-              placeholder="Confirmar contraseña"
-              className={
-                errores.confirmarPassword ? "input-error" : ""
-              }
-              aria-invalid={Boolean(errores.confirmarPassword)}
-            />
+            <span className="password-input-wrap">
+              <input
+                type={mostrarConfirmacion ? "text" : "password"}
+                name="confirmarPassword"
+                value={formulario.confirmarPassword}
+                onChange={manejarCambio}
+                placeholder="Confirmar contraseña"
+                className={
+                  errores.confirmarPassword ? "input-error" : ""
+                }
+                aria-invalid={Boolean(errores.confirmarPassword)}
+              />
+              <button type="button" className="password-visibility-button" aria-label={mostrarConfirmacion ? "Ocultar confirmación de contraseña" : "Mostrar confirmación de contraseña"} aria-pressed={mostrarConfirmacion} onClick={() => setMostrarConfirmacion(valor => !valor)}>
+                {mostrarConfirmacion ? <EyeOff aria-hidden="true"/> : <Eye aria-hidden="true"/>}
+              </button>
+            </span>
 
             {errores.confirmarPassword && (
               <span className="field-error">

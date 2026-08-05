@@ -135,6 +135,7 @@ input:focus,select:focus,textarea:focus { border-color:var(--blue); box-shadow:0
 .password-input-wrap input { padding-right:50px; }
 .password-visibility-button { position:absolute; top:50%; right:8px; transform:translateY(-50%); width:36px; height:36px; min-height:0!important; display:grid; place-items:center; padding:0; border:0; border-radius:8px; color:#536079!important; background:transparent!important; cursor:pointer; font-size:17px; }
 .password-visibility-button:hover { background:#edf3ff!important; }
+.password-visibility-button svg { width:19px; height:19px; }
 .google-button { width:100%; margin-top:24px; color:#28364f; background:white; border:1px solid #d5dce8; }
 .auth-divider { display:flex; align-items:center; gap:12px; margin:22px 0; color:#8a94a7; font-size:12px; }
 .auth-divider::before,.auth-divider::after { content:""; flex:1; height:1px; background:var(--line); }
