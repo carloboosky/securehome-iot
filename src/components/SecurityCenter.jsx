@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { FilesetResolver, ObjectDetector } from "@mediapipe/tasks-vision";
+import { Activity, BellRing, CalendarDays, Clock3, Maximize, Moon, Nfc, PawPrint, Phone, Radio, Send, ShieldCheck, Sun, TriangleAlert, Users, Video } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { getSecureCameraStreamUrl } from "../lib/secureCamera";
 
@@ -633,7 +634,7 @@ function SecurityCenter({ requestId }) {
             <div><i className={cameraOnline ? "online" : ""}/><b>Cámara {Math.max(1, configuredCameras.findIndex(camera => camera.stream_url === configuredCameraUrl) + 1)}</b></div>
             <div className="camera-topbar-actions">
               <span>{cameraOnline ? "EN VIVO" : configuredCameraUrl ? "CONECTANDO" : "SIN CONFIGURAR"}</span>
-              {configuredCameraUrl && <button type="button" className="fullscreen-button" onClick={openCameraFullscreen} aria-label="Ver cámara en pantalla completa">⛶ Pantalla completa</button>}
+              {configuredCameraUrl && <button type="button" className="fullscreen-button" onClick={openCameraFullscreen} aria-label="Ver cámara en pantalla completa"><Maximize aria-hidden="true"/> Pantalla completa</button>}
             </div>
           </div>
           <div className="camera-screen">
@@ -650,7 +651,7 @@ function SecurityCenter({ requestId }) {
                 onError={retryCameraStream}
               />
               <canvas ref={canvasRef} aria-hidden="true" />
-            </> : <div className="camera-placeholder"><span>📷</span><b>{configuredCameraUrl ? "Cargando cámara segura" : "Cámara pendiente de configuración"}</b><p>{configuredCameraUrl ? "Validando tu sesión y solicitando acceso temporal…" : "El administrador debe asignar al menos una cámara a tu solicitud."}</p></div>}
+            </> : <div className="camera-placeholder"><span><Video aria-hidden="true"/></span><b>{configuredCameraUrl ? "Cargando cámara segura" : "Cámara pendiente de configuración"}</b><p>{configuredCameraUrl ? "Validando tu sesión y solicitando acceso temporal…" : "El administrador debe asignar al menos una cámara a tu solicitud."}</p></div>}
           </div>
           <div className="camera-permission">
             <div><b>Acceso temporal para soporte</b><span>El administrador debe solicitar acceso. Recibirás un código nuevo que caduca en 5 minutos.</span></div>
@@ -660,22 +661,22 @@ function SecurityCenter({ requestId }) {
 
         <aside className="quick-controls">
           <article className="control-card alarm-card">
-            <span className="control-icon">🚨</span>
+            <span className="control-icon alarm-icon"><BellRing aria-hidden="true"/></span>
             <div><h3>Sirena</h3><p>Prueba el sonido de alarma.</p></div>
             <button type="button" disabled={sounding} onClick={testAlarm}>{sounding ? "Sonando..." : "Sonar alarma"}</button>
           </article>
           <article className="control-card">
-            <span className="control-icon">🔑</span>
+            <span className="control-icon"><Nfc aria-hidden="true"/></span>
             <div><h3>Alarma de puerta NFC</h3><p>Avisa cuando se abra sin una tarjeta autorizada.</p></div>
             <button type="button" className={`switch ${config.nfcDoor ? "on" : ""}`} aria-label="Activar alarma NFC" aria-pressed={config.nfcDoor} onClick={() => update("nfcDoor", !config.nfcDoor)}><span/></button>
           </article>
           <article className="control-card">
-            <span className="control-icon">📱</span>
+            <span className="control-icon"><Send aria-hidden="true"/></span>
             <div><h3>Alertas de Telegram</h3><p>Envía los eventos al chat vinculado.</p></div>
             <button type="button" className={`switch ${config.telegram ? "on" : ""}`} aria-label="Activar Telegram" aria-pressed={config.telegram} onClick={() => update("telegram", !config.telegram)}><span/></button>
           </article>
           <article className="control-card phone-control-card">
-            <span className="control-icon">☎️</span>
+            <span className="control-icon"><Phone aria-hidden="true"/></span>
             <div><h3>Número para notificaciones</h3><p>Completa el celular asociado a tus alertas.</p></div>
             <div className="phone-control-form">
               <input aria-label="Número de celular" inputMode="numeric" maxLength={10} placeholder="09XXXXXXXX" value={phone} onChange={event => {
@@ -687,7 +688,7 @@ function SecurityCenter({ requestId }) {
             </div>
           </article>
           <article className="control-card">
-            <span className="control-icon">📡</span>
+            <span className="control-icon"><Radio aria-hidden="true"/></span>
             <div><h3>Sensores</h3><p>Los sensores se vinculan durante la instalación.</p></div>
             <span className="device-badge">Pendiente</span>
           </article>
@@ -696,7 +697,7 @@ function SecurityCenter({ requestId }) {
 
       <section className="household-management-grid" aria-label="Gestión del hogar">
         <article className="household-card">
-          <div className="household-card-heading"><span className="control-icon">👥</span><div><h3>Gestión de residentes</h3><p>El modo de seguridad cambia según quién esté en casa.</p></div></div>
+          <div className="household-card-heading"><span className="control-icon"><Users aria-hidden="true"/></span><div><h3>Gestión de residentes</h3><p>El modo de seguridad cambia según quién esté en casa.</p></div></div>
           <form className="household-add-form resident-add-form" onSubmit={addResident}>
             <input maxLength={80} placeholder="Nombre completo" value={residentName} onChange={event => setResidentName(event.target.value)} aria-label="Nombre del residente"/>
             <input maxLength={40} placeholder="Rol: familiar, cuidador…" value={residentRole} onChange={event => setResidentRole(event.target.value)} aria-label="Rol del residente"/>
@@ -713,14 +714,14 @@ function SecurityCenter({ requestId }) {
         </article>
 
         <article className="household-card">
-          <div className="household-card-heading"><span className="control-icon">🐾</span><div><h3>Gestión de mascotas</h3><p>Registra las mascotas para identificar el entorno del hogar.</p></div></div>
+          <div className="household-card-heading"><span className="control-icon"><PawPrint aria-hidden="true"/></span><div><h3>Gestión de mascotas</h3><p>Registra las mascotas para identificar el entorno del hogar.</p></div></div>
           <form className="household-add-form" onSubmit={addPet}>
             <input maxLength={80} placeholder="Nombre de la mascota" value={petName} onChange={event => setPetName(event.target.value)} aria-label="Nombre de la mascota"/>
             <select value={petType} onChange={event => setPetType(event.target.value)} aria-label="Tipo de mascota"><option>Perro</option><option>Gato</option><option>Ave</option><option>Otro</option></select>
             <button type="submit">＋ Agregar</button>
           </form>
           {householdLoading ? <p className="empty-residents">Cargando mascotas…</p> : pets.length ? <ul className="household-list pet-list">
-            {pets.map(pet => <li key={pet.id}><span className="household-avatar pet-avatar">🐾</span><div><b>{pet.name}</b><small>{pet.type}</small></div><button type="button" className="household-delete" onClick={() => removePet(pet)} aria-label={`Eliminar a ${pet.name}`}>×</button></li>)}
+            {pets.map(pet => <li key={pet.id}><span className="household-avatar pet-avatar"><PawPrint aria-hidden="true"/></span><div><b>{pet.name}</b><small>{pet.type}</small></div><button type="button" className="household-delete" onClick={() => removePet(pet)} aria-label={`Eliminar a ${pet.name}`}>×</button></li>)}
           </ul> : <p className="empty-residents">Todavía no hay mascotas registradas.</p>}
         </article>
       </section>
@@ -728,17 +729,17 @@ function SecurityCenter({ requestId }) {
 
       {accessCode && !urgentDismissed && <aside className="urgent-camera-code" role="alert">
         <button type="button" className="urgent-close" aria-label="Cerrar alerta" onClick={() => setUrgentDismissed(true)}>×</button>
-        <span>⚠️</span><div><b>Solicitud urgente de acceso a cámara</b><p>Comparte este código únicamente con el administrador. Caduca en 5 minutos y funciona una sola vez.</p><strong>{accessCode}</strong></div>
+        <span><TriangleAlert aria-hidden="true"/></span><div><b>Solicitud urgente de acceso a cámara</b><p>Comparte este código únicamente con el administrador. Caduca en 5 minutos y funciona una sola vez.</p><strong>{accessCode}</strong></div>
       </aside>}
 
       <article className="schedule-card">
-        <div className="schedule-title"><span>🕒</span><div><h3>Horario de protección</h3><p>Decide cuándo se activará automáticamente el sistema.</p></div></div>
+        <div className="schedule-title"><span><Clock3 aria-hidden="true"/></span><div><h3>Horario de protección</h3><p>Decide cuándo se activará automáticamente el sistema.</p></div></div>
         <div className="mode-buttons">
-          <button type="button" className={scheduleDraft.mode === "always" ? "selected" : ""} onClick={() => setScheduleDraft(previous => ({ ...previous, mode: "always" }))}><span>☀️</span><b>Todo el día</b><small>Protección continua 24/7</small></button>
-          <button type="button" className={scheduleDraft.mode === "custom" ? "selected" : ""} onClick={() => setScheduleDraft(previous => ({ ...previous, mode: "custom" }))}><span>🗓️</span><b>Personalizado</b><small>Elige días y horas</small></button>
+          <button type="button" className={scheduleDraft.mode === "always" ? "selected" : ""} onClick={() => setScheduleDraft(previous => ({ ...previous, mode: "always" }))}><span><Sun aria-hidden="true"/></span><b>Todo el día</b><small>Protección continua 24/7</small></button>
+          <button type="button" className={scheduleDraft.mode === "custom" ? "selected" : ""} onClick={() => setScheduleDraft(previous => ({ ...previous, mode: "custom" }))}><span><CalendarDays aria-hidden="true"/></span><b>Personalizado</b><small>Elige días y horas</small></button>
         </div>
         {scheduleDraft.mode === "always" && <div className="all-day-schedule">
-          <span>🛡️</span>
+          <span><ShieldCheck aria-hidden="true"/></span>
           <div><b>Protección activa las 24 horas</b><p>El sistema permanecerá preparado todos los días, sin interrupciones.</p></div>
           <button type="button" onClick={confirmAllDay}>{config.mode === "always" ? "Confirmar nuevamente" : "Confirmar todo el día"}</button>
         </div>}
@@ -748,11 +749,11 @@ function SecurityCenter({ requestId }) {
             <div className="day-picker">{days.map(([value, label]) => <button type="button" aria-label={value} className={scheduleDraft.days.includes(value) ? "selected" : ""} onClick={() => toggleDay(value)} key={value}><i>✓</i>{label}</button>)}</div>
           </div>
           <div className="time-range">
-            <label><span>🌙 Hora de inicio</span><select value={scheduleDraft.start} onChange={event => setScheduleDraft(previous => ({ ...previous, start: event.target.value }))}>{timeOptions.map(time => <option value={time} key={time}>{time}</option>)}</select></label>
+            <label><span><Moon aria-hidden="true"/> Hora de inicio</span><select value={scheduleDraft.start} onChange={event => setScheduleDraft(previous => ({ ...previous, start: event.target.value }))}>{timeOptions.map(time => <option value={time} key={time}>{time}</option>)}</select></label>
             <b>→</b>
-            <label><span>☀️ Hora de fin</span><select value={scheduleDraft.end} onChange={event => setScheduleDraft(previous => ({ ...previous, end: event.target.value }))}>{timeOptions.map(time => <option value={time} key={time}>{time}</option>)}</select></label>
+            <label><span><Sun aria-hidden="true"/> Hora de fin</span><select value={scheduleDraft.end} onChange={event => setScheduleDraft(previous => ({ ...previous, end: event.target.value }))}>{timeOptions.map(time => <option value={time} key={time}>{time}</option>)}</select></label>
           </div>
-          <p className="schedule-summary">🛡️ El sistema se activará de <strong>{scheduleDraft.start}</strong> a <strong>{scheduleDraft.end}</strong> los días seleccionados.</p>
+          <p className="schedule-summary"><ShieldCheck aria-hidden="true"/> El sistema se activará de <strong>{scheduleDraft.start}</strong> a <strong>{scheduleDraft.end}</strong> los días seleccionados.</p>
           <button type="button" className="confirm-schedule-button" onClick={confirmCustomSchedule}>✓ Confirmar horario personalizado</button>
         </div>}
         <p className="saved-schedule">Configuración guardada: <strong>{config.mode === "always" ? "protección todo el día" : `${config.start} a ${config.end}`}</strong></p>
