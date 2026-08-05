@@ -5,6 +5,7 @@ import { supabase } from "../lib/supabase";
 import { getSecureCameraStreamUrl } from "../lib/secureCamera";
 
 const ALERTS_URL = "https://iot-security.pro/api/alerts";
+const TELEGRAM_LINK_URL = `${ALERTS_URL}/telegram/add`;
 const ALERT_COOLDOWN_MS = 15_000;
 const STREAM_TOKEN_REFRESH_MS = 9 * 60 * 1000;
 const DETECTION_INTERVAL_MS = 500;
@@ -73,6 +74,8 @@ function SecurityCenter({ requestId }) {
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
   const [savingPhone, setSavingPhone] = useState(false);
+  const [telegramChatId, setTelegramChatId] = useState("");
+  const [linkingTelegram, setLinkingTelegram] = useState(false);
   const [residents, setResidents] = useState([]);
   const [pets, setPets] = useState([]);
   const [residentName, setResidentName] = useState("");
@@ -498,6 +501,34 @@ function SecurityCenter({ requestId }) {
     setNotice("Número de celular guardado correctamente.");
   }
 
+  async function linkTelegramPhone(event) {
+    event.preventDefault();
+    const cleanChatId = telegramChatId.trim();
+    if (!/^-?\d{5,20}$/.test(cleanChatId)) {
+      setNotice("Ingresa un Telegram Chat ID válido compuesto únicamente por números.");
+      return;
+    }
+    setLinkingTelegram(true);
+    setNotice("Vinculando el celular con las alertas de Telegram…");
+    try {
+      const response = await fetch(TELEGRAM_LINK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chatId: cleanChatId }),
+      });
+      if (!response.ok) {
+        const responseData = await response.json().catch(() => null);
+        throw new Error(responseData?.message || `El servidor respondió ${response.status}.`);
+      }
+      setTelegramChatId("");
+      setNotice("Celular vinculado exitosamente. Ahora recibirá fotos de seguridad.");
+    } catch (error) {
+      setNotice(`No se pudo vincular el celular: ${error.message}`);
+    } finally {
+      setLinkingTelegram(false);
+    }
+  }
+
   function applyPresenceMode(nextResidents) {
     if (nextResidents.length === 0) return;
     const nobodyAtHome = nextResidents.every(resident => !resident.is_at_home);
@@ -697,10 +728,15 @@ function SecurityCenter({ requestId }) {
             <div><h3>Alarma de puerta NFC</h3><p>Avisa cuando se abra sin una tarjeta autorizada.</p></div>
             <button type="button" className={`switch ${config.nfcDoor ? "on" : ""}`} aria-label="Activar alarma NFC" aria-pressed={config.nfcDoor} onClick={() => update("nfcDoor", !config.nfcDoor)}><span/></button>
           </article>
-          <article className="control-card">
+          <article className="control-card telegram-control-card">
             <span className="control-icon"><Send aria-hidden="true"/></span>
             <div><h3>Alertas de Telegram</h3><p>Envía los eventos al chat vinculado.</p></div>
             <button type="button" className={`switch ${config.telegram ? "on" : ""}`} aria-label="Activar Telegram" aria-pressed={config.telegram} onClick={() => update("telegram", !config.telegram)}><span/></button>
+            <form className="telegram-link-form" onSubmit={linkTelegramPhone}>
+              <input type="text" inputMode="numeric" autoComplete="off" placeholder="Telegram Chat ID del familiar" value={telegramChatId} onChange={event => setTelegramChatId(event.target.value.replace(/[^\d-]/g, "").slice(0, 20))} aria-label="Telegram Chat ID del familiar"/>
+              <button type="submit" disabled={linkingTelegram}>{linkingTelegram ? "Vinculando…" : "Vincular celular"}</button>
+              <small>El familiar debe iniciar primero una conversación con el bot para obtener su Chat ID.</small>
+            </form>
           </article>
           <article className="control-card phone-control-card">
             <span className="control-icon"><Phone aria-hidden="true"/></span>
