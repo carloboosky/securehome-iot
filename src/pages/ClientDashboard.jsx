@@ -5,6 +5,7 @@ import SecurityCenter from "../components/SecurityCenter";
 import RequestChat from "../components/RequestChat";
 import AppointmentScheduler from "../components/AppointmentScheduler";
 import MessageNotifications from "../components/MessageNotifications";
+import ResidentsManager from "../components/ResidentsManager";
 
 function ClientDashboard() {
   const navigate = useNavigate();
@@ -169,6 +170,7 @@ function ClientDashboard() {
         </div>
 
         <div className="dashboard-header-actions">
+          <Link className="home-button" to="/disena-tu-sistema">🎨 Mi diseño</Link>
           <Link className="home-button" to="/">⌂ Página principal</Link>
           <button type="button" className="logout-button" onClick={cerrarSesion}>Cerrar sesión</button>
         </div>
@@ -263,6 +265,8 @@ function ClientDashboard() {
               <p>{perfil?.phone || "No registrado"}</p>
             </article>
           </section>
+
+          <ResidentsManager requestId={solicitud.id} />
 
           <section className="events-section">
             <div className="events-heading">

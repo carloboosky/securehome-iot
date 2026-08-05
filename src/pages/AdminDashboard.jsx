@@ -88,14 +88,15 @@ function AdminDashboard() {
   async function openClientDetails(request) {
     setClientDetailsLoading(true);
     setClientDetails({ fallback: request });
-    const { data, error } = await supabase.rpc("get_client_registration_details", {
-      target_request_id: request.id,
-    });
+    const [{ data, error }, { data: design }] = await Promise.all([
+      supabase.rpc("get_client_registration_details", { target_request_id: request.id }),
+      supabase.from("camera_design_selections").select("model,color,mount_type,notes").eq("request_id", request.id).maybeSingle(),
+    ]);
     if (error) {
       setMessage(`No se pudo cargar toda la ficha: ${error.message}`);
       setClientDetails({ fallback: request, loadError: true });
     } else {
-      setClientDetails(data);
+      setClientDetails({ ...data, camera_design: design });
     }
     setClientDetailsLoading(false);
   }
@@ -236,6 +237,9 @@ function AdminDashboard() {
               created_at: fallback?.created_at,
             } : clientDetails;
             const propertyLabels = { house: "Casa", apartment: "Departamento", business: "Negocio", office: "Oficina" };
+            const designModelLabels = { modular: "ESP32 Modular V3", house: "Casa Protectora", spider: "Araña Robótica (+$85)", outlet: "Cámara de Enchufe", desktop: "ESP32 de Escritorio" };
+            const designColorLabels = { white: "Blanco", black: "Negro", gray: "Gris", blue: "Azul" };
+            const mountLabels = { wall: "Pared", ceiling: "Techo", table: "Mesa o repisa", corner: "Esquina" };
             return <div className="client-profile-body">
               <div className="client-profile-heading"><span>{details.full_name?.charAt(0).toUpperCase() || "C"}</span><div><h2>{details.full_name || "Cliente sin nombre"}</h2><p>{details.email || "Correo no disponible"}</p></div></div>
               <div className="client-profile-grid">
@@ -247,6 +251,7 @@ function AdminDashboard() {
                 <div className="wide"><span>Fecha de registro</span><b>{details.created_at ? new Intl.DateTimeFormat("es-EC", { dateStyle: "long", timeStyle: "short" }).format(new Date(details.created_at)) : "No disponible"}</b></div>
               </div>
               <div className="client-household-details"><span>Datos del hogar e información adicional</span><pre>{details.notes || "No se proporcionaron detalles adicionales."}</pre></div>
+              <div className="client-household-details"><span>Diseño de cámara seleccionado</span>{details.camera_design ? <pre>{`${designModelLabels[details.camera_design.model] || details.camera_design.model}\nColor: ${designColorLabels[details.camera_design.color] || details.camera_design.color}\nMontaje: ${mountLabels[details.camera_design.mount_type] || details.camera_design.mount_type}${details.camera_design.notes ? `\nIndicaciones: ${details.camera_design.notes}` : ""}`}</pre> : <pre>El cliente todavía no ha seleccionado un diseño.</pre>}</div>
               <p className="password-privacy-note">🔒 La contraseña nunca se muestra ni se almacena como texto visible.</p>
             </div>;
           })()}

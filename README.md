@@ -57,6 +57,18 @@ npm run preview
 
 Los archivos `supabase_*.sql` contienen las tablas, políticas RLS, funciones administrativas y triggers requeridos. Deben ejecutarse desde Supabase SQL Editor según el módulo que se vaya habilitando.
 
+## Código de verificación de registro
+
+El registro por correo valida al usuario mediante el OTP de seis dígitos de Supabase. En **Authentication → Email Templates → Confirm signup**, la plantilla debe mostrar el token, por ejemplo:
+
+```html
+<h2>Confirma tu cuenta de SecureHome</h2>
+<p>Tu código de verificación es:</p>
+<h1>{{ .Token }}</h1>
+```
+
+También debe permanecer habilitada la confirmación de correo en **Authentication → Providers → Email**. El formulario crea la solicitud de instalación únicamente después de que el código sea validado.
+
 ## Estado
 
 Los flujos web principales del MVP están implementados. La conexión definitiva de sirena, sensores NFC y demás hardware físico permanece como trabajo posterior.

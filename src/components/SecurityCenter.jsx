@@ -67,6 +67,9 @@ function SecurityCenter({ requestId }) {
   const [urgentDismissed, setUrgentDismissed] = useState(false);
   const [notice, setNotice] = useState("");
   const [sounding, setSounding] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+  const [savingPhone, setSavingPhone] = useState(false);
   const imgRef = useRef(null);
   const canvasRef = useRef(null);
   const analysisCanvasRef = useRef(null);
@@ -76,10 +79,27 @@ function SecurityCenter({ requestId }) {
   const retryTimeoutRef = useRef(null);
   const lastAlertAtRef = useRef(0);
   const lastDetectionAtRef = useRef(0);
+  const configRef = useRef(config);
 
   useEffect(() => {
+    configRef.current = config;
     localStorage.setItem(storageKey, JSON.stringify(config));
+    localStorage.setItem("home_mode", config.armed ? "AUSENTE" : "EN_CASA");
   }, [config, storageKey]);
+
+  useEffect(() => {
+    let active = true;
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) return;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("phone")
+        .eq("id", data.user.id)
+        .maybeSingle();
+      if (active) setPhone(profile?.phone || data.user.user_metadata?.phone || "");
+    });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -242,15 +262,14 @@ function SecurityCenter({ requestId }) {
                   && category.score > 0.70
                   && now - lastAlertAtRef.current >= ALERT_COOLDOWN_MS
                 ) {
+                  if (!configRef.current.armed || !configRef.current.telegram || localStorage.getItem("home_mode") !== "AUSENTE") return;
                   lastAlertAtRef.current = now;
-                  
                   let imagen_base64 = null;
                   try {
-                    imagen_base64 = analysisCanvas.toDataURL('image/jpeg', 0.7);
-                  } catch (e) {
-                    console.warn("No se pudo extraer la imagen para Telegram:", e);
+                    imagen_base64 = analysisCanvas.toDataURL("image/jpeg", 0.82);
+                  } catch (captureError) {
+                    console.warn("No se pudo extraer la imagen para Telegram:", captureError);
                   }
-
                   fetch(ALERTS_URL, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -258,7 +277,7 @@ function SecurityCenter({ requestId }) {
                       message: "🚨 INTRUSIÓN: Persona detectada en el stream",
                       confidence: Math.round(category.score * 100),
                       tipo_evento: "Persona",
-                      imagen_base64: imagen_base64
+                      imagen_base64,
                     }),
                   }).catch(error => console.error("No se pudo enviar la alerta:", error));
                 }
@@ -374,7 +393,33 @@ function SecurityCenter({ requestId }) {
 
   function update(key, value) {
     setConfig(previous => ({ ...previous, [key]: value }));
+    if (key === "armed") {
+      localStorage.setItem("home_mode", value ? "AUSENTE" : "EN_CASA");
+      setNotice(value
+        ? "Sistema activado: modo AUSENTE. Las alertas de intrusión están habilitadas."
+        : "Sistema desactivado: modo EN CASA.");
+      return;
+    }
     setNotice("Configuración guardada en este dispositivo.");
+  }
+
+  async function savePhone() {
+    if (!/^09\d{8}$/.test(phone)) {
+      setPhoneError("Ingresa un celular ecuatoriano válido de 10 dígitos que comience con 09.");
+      return;
+    }
+    setSavingPhone(true);
+    setPhoneError("");
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = user
+      ? await supabase.from("profiles").update({ phone }).eq("id", user.id)
+      : { error: new Error("Tu sesión caducó.") };
+    setSavingPhone(false);
+    if (error) {
+      setPhoneError(`No se pudo guardar: ${error.message}`);
+      return;
+    }
+    setNotice("Número de celular guardado correctamente.");
   }
 
   function toggleDay(day) {
@@ -507,6 +552,18 @@ function SecurityCenter({ requestId }) {
             <div><h3>Alertas de Telegram</h3><p>Envía los eventos al chat vinculado.</p></div>
             <button type="button" className={`switch ${config.telegram ? "on" : ""}`} aria-label="Activar Telegram" aria-pressed={config.telegram} onClick={() => update("telegram", !config.telegram)}><span/></button>
           </article>
+          <article className="control-card phone-control-card">
+            <span className="control-icon">☎️</span>
+            <div><h3>Número para notificaciones</h3><p>Completa el celular asociado a tus alertas.</p></div>
+            <div className="phone-control-form">
+              <input aria-label="Número de celular" inputMode="numeric" maxLength={10} placeholder="09XXXXXXXX" value={phone} onChange={event => {
+                setPhone(event.target.value.replace(/\D/g, "").slice(0, 10));
+                setPhoneError("");
+              }}/>
+              <button type="button" onClick={savePhone} disabled={savingPhone}>{savingPhone ? "Guardando…" : "Guardar"}</button>
+              {phoneError && <small className="field-error" role="alert">{phoneError}</small>}
+            </div>
+          </article>
           <article className="control-card">
             <span className="control-icon">📡</span>
             <div><h3>Sensores</h3><p>Los sensores se vinculan durante la instalación.</p></div>
@@ -514,6 +571,7 @@ function SecurityCenter({ requestId }) {
           </article>
         </aside>
       </div>
+
       {accessCode && !urgentDismissed && <aside className="urgent-camera-code" role="alert">
         <button type="button" className="urgent-close" aria-label="Cerrar alerta" onClick={() => setUrgentDismissed(true)}>×</button>
         <span>⚠️</span><div><b>Solicitud urgente de acceso a cámara</b><p>Comparte este código únicamente con el administrador. Caduca en 5 minutos y funciona una sola vez.</p><strong>{accessCode}</strong></div>

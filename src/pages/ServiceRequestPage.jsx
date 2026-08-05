@@ -108,7 +108,7 @@ function ServiceRequestPage() {
       setSaving(false);
       return;
     }
-    navigate("/dashboard", { replace: true });
+    navigate("/disena-tu-sistema", { replace: true });
   }
 
   if (loading) return <main className="dashboard-loading-container"><div className="dashboard-loader"/><p>Preparando formulario...</p></main>;
