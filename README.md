@@ -53,6 +53,20 @@ npm run build
 npm run preview
 ```
 
+## Servidor MCP
+
+El proyecto incluye un servidor MCP oficial de solo lectura en `mcp/server.js`. Expone las herramientas `list-clients`, `get-security-overview`, `list-cameras` y `get-household` para que un cliente de IA consulte el sistema sin poder desbloquear puertas, desactivar alarmas ni modificar datos.
+
+Antes de probar las herramientas, ejecuta `supabase_mcp_readonly_setup.sql` en Supabase SQL Editor. La migración concede al rol `service_role` solamente acceso `SELECT` sobre las tablas consultadas.
+
+Primero copia `.env.mcp.example` como `.env.mcp`, completa sus dos variables y ejecuta:
+
+```bash
+npm run mcp
+```
+
+Puedes adaptar `mcp/mcp-config.example.json` para registrar el servidor en un host compatible. La clave `MCP_SUPABASE_SERVICE_ROLE_KEY` es secreta: nunca debe incluirse en Git, Vercel ni en el frontend.
+
 ## Base de datos
 
 Los archivos `supabase_*.sql` contienen las tablas, políticas RLS, funciones administrativas y triggers requeridos. Deben ejecutarse desde Supabase SQL Editor según el módulo que se vaya habilitando.
