@@ -673,12 +673,12 @@ function SecurityCenter({ requestId }) {
                 </> : <div className="camera-placeholder"><span><Video aria-hidden="true"/></span><b>{configuredCameraUrl ? "Cargando Cámara 1" : "Cámara 1 sin configurar"}</b><p>{configuredCameraUrl ? "Validando la transmisión segura…" : "El administrador debe asignar esta cámara."}</p></div>}
               </div>
             </section>
-            <section className="camera-feed">
+            {secondaryConfiguredUrl && <section className="camera-feed">
               <div className="camera-topbar"><div><Video aria-hidden="true"/><i className={secondaryCameraOnline ? "online" : ""}/><b>Cámara 2</b></div><span>{secondaryCameraOnline ? "EN VIVO" : secondaryConfiguredUrl ? "CONECTANDO" : "SIN CONFIGURAR"}</span></div>
               <div className="camera-screen">
-                {secondaryCameraUrl ? <img crossOrigin="anonymous" src={secondaryCameraUrl} alt="Transmisión en vivo de la Cámara 2" onLoad={() => setSecondaryCameraOnline(true)} onError={retrySecondaryCameraStream}/> : <div className="camera-placeholder"><span><Video aria-hidden="true"/></span><b>{secondaryConfiguredUrl ? "Cargando Cámara 2" : "Cámara 2 sin configurar"}</b><p>{secondaryConfiguredUrl ? "Validando la transmisión segura…" : "El administrador debe asignar una segunda cámara."}</p></div>}
+                {secondaryCameraUrl ? <img crossOrigin="anonymous" src={secondaryCameraUrl} alt="Transmisión en vivo de la Cámara 2" onLoad={() => setSecondaryCameraOnline(true)} onError={retrySecondaryCameraStream}/> : <div className="camera-placeholder"><span><Video aria-hidden="true"/></span><b>Cargando Cámara 2</b><p>Validando la transmisión segura…</p></div>}
               </div>
-            </section>
+            </section>}
           </div>
           <div className="camera-permission">
             <div><b>Acceso temporal para soporte</b><span>El administrador debe solicitar acceso. Recibirás un código nuevo que caduca en 5 minutos.</span></div>
