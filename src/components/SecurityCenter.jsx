@@ -70,6 +70,14 @@ function SecurityCenter({ requestId }) {
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
   const [savingPhone, setSavingPhone] = useState(false);
+  const [residents, setResidents] = useState([]);
+  const [pets, setPets] = useState([]);
+  const [residentName, setResidentName] = useState("");
+  const [residentRole, setResidentRole] = useState("Familiar");
+  const [petName, setPetName] = useState("");
+  const [petType, setPetType] = useState("Perro");
+  const [householdLoading, setHouseholdLoading] = useState(true);
+  const [householdMessage, setHouseholdMessage] = useState("");
   const imgRef = useRef(null);
   const canvasRef = useRef(null);
   const analysisCanvasRef = useRef(null);
@@ -100,6 +108,32 @@ function SecurityCenter({ requestId }) {
     });
     return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    async function loadHousehold() {
+      const [{ data: residentData, error: residentError }, { data: petData, error: petError }] = await Promise.all([
+        supabase.from("residents").select("id,full_name,role,is_at_home").eq("request_id", requestId).order("created_at"),
+        supabase.from("pets").select("id,name,type").eq("request_id", requestId).order("created_at"),
+      ]);
+      if (!active) return;
+      if (residentError || petError) {
+        setHouseholdMessage(`No se pudo cargar el hogar: ${residentError?.message || petError?.message}`);
+      } else {
+        const loadedResidents = residentData || [];
+        setResidents(loadedResidents);
+        setPets(petData || []);
+        if (loadedResidents.length > 0) {
+          const nobodyAtHome = loadedResidents.every(resident => !resident.is_at_home);
+          setConfig(previous => ({ ...previous, armed: nobodyAtHome }));
+          localStorage.setItem("home_mode", nobodyAtHome ? "AUSENTE" : "EN_CASA");
+        }
+      }
+      setHouseholdLoading(false);
+    }
+    loadHousehold();
+    return () => { active = false; };
+  }, [requestId]);
 
   useEffect(() => {
     let active = true;
@@ -422,6 +456,94 @@ function SecurityCenter({ requestId }) {
     setNotice("Número de celular guardado correctamente.");
   }
 
+  function applyPresenceMode(nextResidents) {
+    if (nextResidents.length === 0) return;
+    const nobodyAtHome = nextResidents.every(resident => !resident.is_at_home);
+    setConfig(previous => ({ ...previous, armed: nobodyAtHome }));
+    localStorage.setItem("home_mode", nobodyAtHome ? "AUSENTE" : "EN_CASA");
+    setNotice(nobodyAtHome
+      ? "Todos los residentes están ausentes. El sistema se activó automáticamente."
+      : "Hay al menos un residente en casa. El sistema se desactivó automáticamente.");
+  }
+
+  async function addResident(event) {
+    event.preventDefault();
+    const cleanName = residentName.trim().replace(/\s+/g, " ");
+    if (cleanName.length < 2) {
+      setHouseholdMessage("Escribe un nombre válido para el residente.");
+      return;
+    }
+    setHouseholdMessage("");
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data, error } = await supabase.from("residents").insert({
+      request_id: requestId,
+      client_id: user.id,
+      full_name: cleanName,
+      role: residentRole.trim() || "Familiar",
+      is_at_home: true,
+    }).select("id,full_name,role,is_at_home").single();
+    if (error) {
+      setHouseholdMessage(`No se pudo agregar: ${error.message}`);
+      return;
+    }
+    const nextResidents = [...residents, data];
+    setResidents(nextResidents);
+    setResidentName("");
+    applyPresenceMode(nextResidents);
+  }
+
+  async function toggleResident(resident) {
+    const nextAtHome = !resident.is_at_home;
+    const nextResidents = residents.map(item => item.id === resident.id ? { ...item, is_at_home: nextAtHome } : item);
+    setResidents(nextResidents);
+    const { error } = await supabase.from("residents").update({ is_at_home: nextAtHome }).eq("id", resident.id);
+    if (error) {
+      setResidents(residents);
+      setHouseholdMessage(`No se pudo actualizar: ${error.message}`);
+      return;
+    }
+    applyPresenceMode(nextResidents);
+  }
+
+  async function removeResident(resident) {
+    const { error } = await supabase.from("residents").delete().eq("id", resident.id);
+    if (error) {
+      setHouseholdMessage(`No se pudo eliminar: ${error.message}`);
+      return;
+    }
+    const nextResidents = residents.filter(item => item.id !== resident.id);
+    setResidents(nextResidents);
+    applyPresenceMode(nextResidents);
+  }
+
+  async function addPet(event) {
+    event.preventDefault();
+    const cleanName = petName.trim().replace(/\s+/g, " ");
+    if (cleanName.length < 2) {
+      setHouseholdMessage("Escribe un nombre válido para la mascota.");
+      return;
+    }
+    setHouseholdMessage("");
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data, error } = await supabase.from("pets").insert({ request_id: requestId, client_id: user.id, name: cleanName, type: petType })
+      .select("id,name,type").single();
+    if (error) {
+      setHouseholdMessage(`No se pudo agregar la mascota: ${error.message}`);
+      return;
+    }
+    setPets(previous => [...previous, data]);
+    setPetName("");
+  }
+
+  async function removePet(pet) {
+    const { error } = await supabase.from("pets").delete().eq("id", pet.id);
+    if (error) {
+      setHouseholdMessage(`No se pudo eliminar: ${error.message}`);
+      return;
+    }
+    setPets(previous => previous.filter(item => item.id !== pet.id));
+  }
+
   function toggleDay(day) {
     setScheduleDraft(previous => ({
       ...previous,
@@ -571,6 +693,38 @@ function SecurityCenter({ requestId }) {
           </article>
         </aside>
       </div>
+
+      <section className="household-management-grid" aria-label="Gestión del hogar">
+        <article className="household-card">
+          <div className="household-card-heading"><span className="control-icon">👥</span><div><h3>Gestión de residentes</h3><p>El modo de seguridad cambia según quién esté en casa.</p></div></div>
+          <form className="household-add-form resident-add-form" onSubmit={addResident}>
+            <input maxLength={80} placeholder="Nombre completo" value={residentName} onChange={event => setResidentName(event.target.value)} aria-label="Nombre del residente"/>
+            <input maxLength={40} placeholder="Rol: familiar, cuidador…" value={residentRole} onChange={event => setResidentRole(event.target.value)} aria-label="Rol del residente"/>
+            <button type="submit">＋ Agregar</button>
+          </form>
+          {householdLoading ? <p className="empty-residents">Cargando residentes…</p> : residents.length ? <ul className="household-list">
+            {residents.map(resident => <li key={resident.id}>
+              <span className="household-avatar">{resident.full_name.charAt(0).toUpperCase()}</span>
+              <div><b>{resident.full_name}</b><small>{resident.role}</small></div>
+              <button type="button" className={`presence-toggle ${resident.is_at_home ? "at-home" : "away"}`} onClick={() => toggleResident(resident)} aria-pressed={resident.is_at_home}>{resident.is_at_home ? "En casa" : "Ausente"}</button>
+              <button type="button" className="household-delete" onClick={() => removeResident(resident)} aria-label={`Eliminar a ${resident.full_name}`}>×</button>
+            </li>)}
+          </ul> : <p className="empty-residents">Todavía no hay residentes. La activación manual seguirá disponible.</p>}
+        </article>
+
+        <article className="household-card">
+          <div className="household-card-heading"><span className="control-icon">🐾</span><div><h3>Gestión de mascotas</h3><p>Registra las mascotas para identificar el entorno del hogar.</p></div></div>
+          <form className="household-add-form" onSubmit={addPet}>
+            <input maxLength={80} placeholder="Nombre de la mascota" value={petName} onChange={event => setPetName(event.target.value)} aria-label="Nombre de la mascota"/>
+            <select value={petType} onChange={event => setPetType(event.target.value)} aria-label="Tipo de mascota"><option>Perro</option><option>Gato</option><option>Ave</option><option>Otro</option></select>
+            <button type="submit">＋ Agregar</button>
+          </form>
+          {householdLoading ? <p className="empty-residents">Cargando mascotas…</p> : pets.length ? <ul className="household-list pet-list">
+            {pets.map(pet => <li key={pet.id}><span className="household-avatar pet-avatar">🐾</span><div><b>{pet.name}</b><small>{pet.type}</small></div><button type="button" className="household-delete" onClick={() => removePet(pet)} aria-label={`Eliminar a ${pet.name}`}>×</button></li>)}
+          </ul> : <p className="empty-residents">Todavía no hay mascotas registradas.</p>}
+        </article>
+      </section>
+      {householdMessage && <p className="control-notice" role="status">{householdMessage}</p>}
 
       {accessCode && !urgentDismissed && <aside className="urgent-camera-code" role="alert">
         <button type="button" className="urgent-close" aria-label="Cerrar alerta" onClick={() => setUrgentDismissed(true)}>×</button>

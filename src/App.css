@@ -284,6 +284,26 @@ input:focus,select:focus,textarea:focus { border-color:var(--blue); box-shadow:0
 .resident-list li button { border:0; color:#c93748; background:transparent; cursor:pointer; font-size:12px; font-weight:800; }
 .empty-residents { margin-top:15px; padding:13px; border-radius:9px; background:#f5f8fc; text-align:center; }
 .resident-message { margin:10px 0 0; color:var(--blue); font-size:12px; font-weight:700; }
+.household-management-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:18px; }
+.household-card { padding:21px; border:1px solid var(--line); border-radius:16px; background:white; box-shadow:0 8px 25px rgba(16,29,54,.05); }
+.household-card-heading { display:flex; align-items:center; gap:12px; }
+.household-card-heading h3 { margin:0 0 4px; color:var(--navy); font:800 16px "Manrope"; }
+.household-card-heading p { margin:0; color:var(--muted); font-size:11px; }
+.household-add-form { display:grid; grid-template-columns:minmax(0,1fr) 120px auto; gap:8px; margin-top:16px; }
+.household-add-form input,.household-add-form select { min-width:0; padding:10px; font-size:12px; }
+.household-add-form button { padding:0 12px; border:0; border-radius:9px; color:white; background:var(--blue); cursor:pointer; font-size:11px; font-weight:800; }
+.household-list { display:grid; gap:8px; margin:14px 0 0; padding:0; list-style:none; }
+.household-list li { display:grid; grid-template-columns:auto minmax(0,1fr) auto auto; align-items:center; gap:9px; padding:9px 10px; border-radius:10px; background:#f5f8fc; }
+.pet-list li { grid-template-columns:auto minmax(0,1fr) auto; }
+.household-avatar { width:34px; height:34px; display:grid; place-items:center; border-radius:9px; color:white; background:var(--blue); font-weight:800; }
+.pet-avatar { color:var(--navy); background:#eaf8f4; }
+.household-list li div { min-width:0; display:grid; gap:2px; }
+.household-list li b { overflow:hidden; color:var(--navy); font-size:12px; text-overflow:ellipsis; white-space:nowrap; }
+.household-list li small { color:var(--muted); font-size:10px; }
+.presence-toggle { padding:7px 9px; border:0; border-radius:20px; cursor:pointer; font-size:10px; font-weight:800; }
+.presence-toggle.at-home { color:#08765d; background:#dff8f1; }
+.presence-toggle.away { color:#9a5b08; background:#fef3c7; }
+.household-delete { width:27px; height:27px; border:0; border-radius:7px; color:#c93748; background:#ffecef; cursor:pointer; font-weight:800; }
 .alarm-card { grid-template-columns:auto 1fr; border-color:#ffd0d3; background:#fff8f8; }
 .alarm-card button { grid-column:1/-1; padding:10px; border:0; border-radius:9px; color:white; background:#e33f50; cursor:pointer; font-weight:800; }
 .alarm-card button:disabled { opacity:.65; }
@@ -555,6 +575,7 @@ input:focus,select:focus,textarea:focus { border-color:var(--blue); box-shadow:0
   .cards { grid-template-columns:repeat(2,1fr); }.dashboard-grid { grid-template-columns:repeat(2,1fr); }
   .cta { flex-direction:column; align-items:flex-start; }.cta-actions { width:100%; }.plan-card.featured { transform:none; }
   .design-content { grid-template-columns:1fr; }.design-options { position:static; }
+  .household-management-grid { grid-template-columns:1fr; }
 }
 @media(max-width:720px) {
   .navbar { height:68px; padding:0 18px; }.menu-toggle { display:block; }.navbar nav { display:none; position:absolute; left:14px; right:14px; top:62px; flex-direction:column; gap:0; padding:10px; border:1px solid var(--line); border-radius:14px; background:white; box-shadow:0 18px 40px rgba(16,29,54,.15); }.navbar nav.nav-open { display:flex; }.navbar nav a { padding:13px; }.navbar nav .mobile-session-link { display:block; margin-top:5px; overflow:hidden; border-radius:9px; color:white; background:var(--blue); text-align:center; text-overflow:ellipsis; white-space:nowrap; }.nav-buttons { display:none; }
@@ -562,6 +583,7 @@ input:focus,select:focus,textarea:focus { border-color:var(--blue); box-shadow:0
   .hero-visual { width:min(100%,390px); min-height:500px; }.status-float { left:12px; bottom:-22px; }.live-pill { right:10px; top:10px; }
   .proof-strip { grid-template-columns:repeat(2,1fr); gap:24px 0; padding:28px 15px; }.proof-strip div:nth-child(2){border:0}
   .camera-model-grid { grid-template-columns:1fr; }.camera-concept-image { height:280px; }.design-page { padding-left:14px; padding-right:14px; }
+  .household-add-form { grid-template-columns:1fr; }.household-add-form button { min-height:42px; }
   .section { padding:75px 20px; }.cards,.plan-grid,.admin-summary { grid-template-columns:1fr; }.card p { min-height:auto; }
   .plan-card.featured { order:-1; }.cta { margin:55px 20px; padding:38px 25px; }
   footer { grid-template-columns:1fr; text-align:center; justify-items:center; }footer > div { flex-wrap:wrap; justify-content:center; }footer small { grid-column:auto; }
