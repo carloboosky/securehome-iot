@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { FilesetResolver, ObjectDetector } from "@mediapipe/tasks-vision";
-import { BellRing, CalendarDays, Check, Clock3, Maximize, Moon, Nfc, PawPrint, Phone, Power, Radio, Send, ShieldCheck, Sun, TriangleAlert, Users, Video } from "lucide-react";
+import { BellRing, CalendarDays, Check, Clock3, Info, Maximize, Moon, Nfc, PawPrint, Phone, Power, Radio, Send, ShieldCheck, Sun, TriangleAlert, Users, Video } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { getSecureCameraStreamUrl } from "../lib/secureCamera";
 
@@ -85,7 +85,9 @@ function SecurityCenter({ requestId }) {
   const [householdLoading, setHouseholdLoading] = useState(true);
   const [householdMessage, setHouseholdMessage] = useState("");
   const imgRef = useRef(null);
+  const imgRef2 = useRef(null);
   const canvasRef = useRef(null);
+  const canvasRef2 = useRef(null);
   const analysisCanvasRef = useRef(null);
   const cameraPanelRef = useRef(null);
   const detectorRef = useRef(null);
@@ -254,9 +256,11 @@ function SecurityCenter({ requestId }) {
         function detectFrame(timestamp) {
           if (cancelled) return;
 
-          const image = imgRef.current;
-          const canvas = canvasRef.current;
           const activeDetector = detectorRef.current;
+          const elementsToProcess = [
+            { image: imgRef.current, canvas: canvasRef.current, cameraName: "Cámara 1" },
+            { image: imgRef2.current, canvas: canvasRef2.current, cameraName: "Cámara 2" },
+          ];
 
           if (timestamp - lastDetectionAtRef.current < DETECTION_INTERVAL_MS) {
             animationFrameRef.current = window.requestAnimationFrame(detectFrame);
@@ -264,7 +268,8 @@ function SecurityCenter({ requestId }) {
           }
           lastDetectionAtRef.current = timestamp;
 
-          if (image?.complete && image.naturalWidth > 0 && canvas && activeDetector) {
+          elementsToProcess.forEach(({ image, canvas, cameraName }) => {
+            if (!image?.complete || image.naturalWidth <= 0 || !canvas || !activeDetector) return;
             const analysisCanvas = analysisCanvasRef.current;
             const displayWidth = image.clientWidth;
             const displayHeight = image.clientHeight;
@@ -342,18 +347,19 @@ function SecurityCenter({ requestId }) {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                      message: "🚨 INTRUSIÓN: Persona detectada en el stream",
+                      message: `🚨 INTRUSIÓN: Persona detectada en ${cameraName}`,
                       confidence: Math.round(category.score * 100),
                       tipo_evento: "Persona",
+                      camera: cameraName,
                       imagen_base64,
                     }),
                   }).catch(error => console.error("No se pudo enviar la alerta:", error));
                 }
               });
             } catch (error) {
-              console.error("No se pudo analizar el fotograma de la cámara:", error);
+              console.error(`No se pudo analizar el fotograma de ${cameraName}:`, error);
             }
-          }
+          });
 
           animationFrameRef.current = window.requestAnimationFrame(detectFrame);
         }
@@ -707,7 +713,7 @@ function SecurityCenter({ requestId }) {
             {secondaryConfiguredUrl && <section className="camera-feed">
               <div className="camera-topbar"><div><Video aria-hidden="true"/><i className={secondaryCameraOnline ? "online" : ""}/><b>Cámara 2</b></div><span>{secondaryCameraOnline ? "EN VIVO" : secondaryConfiguredUrl ? "CONECTANDO" : "SIN CONFIGURAR"}</span></div>
               <div className="camera-screen">
-                {secondaryCameraUrl ? <img crossOrigin="anonymous" src={secondaryCameraUrl} alt="Transmisión en vivo de la Cámara 2" onLoad={() => setSecondaryCameraOnline(true)} onError={retrySecondaryCameraStream}/> : <div className="camera-placeholder"><span><Video aria-hidden="true"/></span><b>Cargando Cámara 2</b><p>Validando la transmisión segura…</p></div>}
+                {secondaryCameraUrl ? <><img ref={imgRef2} crossOrigin="anonymous" src={secondaryCameraUrl} alt="Transmisión en vivo de la Cámara 2" onLoad={() => setSecondaryCameraOnline(true)} onError={retrySecondaryCameraStream}/><canvas ref={canvasRef2} aria-hidden="true"/></> : <div className="camera-placeholder"><span><Video aria-hidden="true"/></span><b>Cargando Cámara 2</b><p>Validando la transmisión segura…</p></div>}
               </div>
             </section>}
           </div>
@@ -737,6 +743,13 @@ function SecurityCenter({ requestId }) {
               <button type="submit" disabled={linkingTelegram}>{linkingTelegram ? "Vinculando…" : "Vincular celular"}</button>
               <small>El familiar debe iniciar primero una conversación con el bot para obtener su Chat ID.</small>
             </form>
+            <div className="telegram-setup-guide">
+              <b>Configura las alertas en 2 pasos</b>
+              <p><span>1</span> Obtén el Chat ID del familiar.</p>
+              <a href="https://t.me/userinfobot" target="_blank" rel="noreferrer"><Info aria-hidden="true"/> Abrir @userinfobot</a>
+              <p><span>2</span> Inicia el bot oficial de seguridad.</p>
+              <a className="primary" href="https://t.me/Iotsecurity_g5_bot" target="_blank" rel="noreferrer"><Send aria-hidden="true"/> Abrir @Iotsecurity_g5_bot</a>
+            </div>
           </article>
           <article className="control-card phone-control-card">
             <span className="control-icon"><Phone aria-hidden="true"/></span>
