@@ -5,7 +5,7 @@ import { supabase } from "../lib/supabase";
 import { getSecureCameraStreamUrl } from "../lib/secureCamera";
 
 const ALERTS_URL = "https://iot-security.pro/api/alerts";
-const ALERT_COOLDOWN_MS = 30_000;
+const ALERT_COOLDOWN_MS = 15_000;
 const STREAM_TOKEN_REFRESH_MS = 9 * 60 * 1000;
 const DETECTION_INTERVAL_MS = 500;
 const DETECTION_MAX_WIDTH = 512;
