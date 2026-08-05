@@ -254,18 +254,27 @@ input:focus,select:focus,textarea:focus { border-color:var(--blue); box-shadow:0
 .system-toggle span { font-size:19px; }
 .system-toggle.is-armed { border-color:#1fbe98; color:#08765d; background:#e7faf5; }
 .control-notice { margin:-8px 0 20px; padding:11px 14px; border-radius:9px; color:#315370; background:#eef6fc; font-size:13px; }
-.security-layout { display:grid; grid-template-columns:minmax(0,1.75fr) minmax(300px,.75fr); gap:20px; }
+.security-layout { display:grid; grid-template-columns:1fr; gap:20px; }
 .camera-panel { overflow:hidden; border-radius:17px; background:#101827; }
+.dual-camera-heading { min-height:62px; display:flex; align-items:center; justify-content:space-between; gap:18px; padding:10px 18px; color:white; background:#101827; border-bottom:1px solid #2b3a50; }
+.dual-camera-heading > div { display:flex; align-items:center; gap:11px; }
+.dual-camera-heading > div > svg { width:25px; height:25px; color:#70a0ff; }
+.dual-camera-heading span { display:grid; gap:2px; }
+.dual-camera-heading b { font:800 15px "Manrope"; }
+.dual-camera-heading small { color:#94a4b9; font-size:10px; }
+.dual-camera-grid { display:grid; grid-template-columns:1fr 1fr; gap:2px; background:#2b3a50; }
+.camera-feed { min-width:0; overflow:hidden; background:#101827; }
 .camera-topbar { height:54px; display:flex; align-items:center; justify-content:space-between; padding:0 18px; color:white; background:#172338; font-size:13px; }
 .camera-topbar div { display:flex; align-items:center; gap:9px; }
 .camera-topbar i { width:8px; height:8px; border-radius:50%; background:#8490a3; }
 .camera-topbar i.online { background:#26d6a9; box-shadow:0 0 0 4px rgba(38,214,169,.14); }
+.camera-topbar svg { width:17px; height:17px; color:#70a0ff; }
 .camera-topbar span { color:#aeb9ca; font-size:10px; font-weight:800; letter-spacing:1px; }
 .camera-topbar .camera-topbar-actions { gap:12px; }
 .fullscreen-button { display:inline-flex; align-items:center; gap:6px; padding:8px 11px; border:1px solid rgba(255,255,255,.2); border-radius:8px; color:white; background:rgba(255,255,255,.1); cursor:pointer; font-size:10px; font-weight:800; transition:.18s; }
 .fullscreen-button svg { width:14px; height:14px; }
 .fullscreen-button:hover { background:rgba(255,255,255,.2); }
-.camera-screen { position:relative; height:390px; display:grid; place-items:center; background:radial-gradient(circle at center,#24354c,#0c1422 67%); }
+.camera-screen { position:relative; height:470px; display:grid; place-items:center; background:radial-gradient(circle at center,#24354c,#0c1422 67%); }
 .camera-screen > img { width:100%; height:100%; object-fit:contain; }
 .camera-screen > canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
 .camera-panel:fullscreen { width:100vw; height:100vh; display:grid; grid-template-rows:auto minmax(0,1fr) auto; border-radius:0; background:#050a12; }
@@ -278,7 +287,7 @@ input:focus,select:focus,textarea:focus { border-color:var(--blue); box-shadow:0
 .camera-config { display:flex; gap:8px; padding:13px; background:#172338; }
 .camera-config input { min-width:0; border-color:#38475e; color:white; background:#101827; }
 .camera-config button { padding:0 16px; border:0; border-radius:9px; color:white; background:var(--blue); cursor:pointer; font-weight:800; }
-.quick-controls { display:grid; gap:12px; }
+.quick-controls { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
 .control-card { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:12px; padding:17px; border:1px solid var(--line); border-radius:14px; }
 .control-icon { display:grid; place-items:center; width:40px; height:40px; border-radius:11px; color:var(--blue); background:#edf3ff; }
 .control-icon svg { width:21px; height:21px; stroke-width:2; }
@@ -604,6 +613,7 @@ input:focus,select:focus,textarea:focus { border-color:var(--blue); box-shadow:0
   .cta { flex-direction:column; align-items:flex-start; }.cta-actions { width:100%; }.plan-card.featured { transform:none; }
   .design-content { grid-template-columns:1fr; }.design-options { position:static; }
   .household-management-grid { grid-template-columns:1fr; }
+  .quick-controls { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 @media(max-width:720px) {
   .navbar { height:68px; padding:0 18px; }.menu-toggle { display:block; }.navbar nav { display:none; position:absolute; left:14px; right:14px; top:62px; flex-direction:column; gap:0; padding:10px; border:1px solid var(--line); border-radius:14px; background:white; box-shadow:0 18px 40px rgba(16,29,54,.15); }.navbar nav.nav-open { display:flex; }.navbar nav a { padding:13px; }.navbar nav .mobile-session-link { display:block; margin-top:5px; overflow:hidden; border-radius:9px; color:white; background:var(--blue); text-align:center; text-overflow:ellipsis; white-space:nowrap; }.nav-buttons { display:none; }
@@ -617,7 +627,7 @@ input:focus,select:focus,textarea:focus { border-color:var(--blue); box-shadow:0
   footer { grid-template-columns:1fr; text-align:center; justify-items:center; }footer > div { flex-wrap:wrap; justify-content:center; }footer small { grid-column:auto; }
   .auth-card { padding:28px 22px; }.dashboard-page,.admin-page { padding:25px 17px; }.dashboard-header,.status-banner { align-items:stretch; flex-direction:column; }.dashboard-header-actions { display:grid; grid-template-columns:1fr 1fr; }.dashboard-header-actions .home-button,.dashboard-header-actions .logout-button { display:flex; align-items:center; justify-content:center; text-align:center; }.dashboard-grid,.request-details { grid-template-columns:1fr; }.logout-button { width:100%; }
   .realtime-notice { top:75px; left:12px; right:12px; max-width:none; }
-  .household-fields > div { grid-template-columns:1fr; }.security-center { padding:20px 15px; }.security-heading { align-items:stretch; flex-direction:column; }.security-layout { grid-template-columns:1fr; }.camera-screen { height:260px; }.camera-config { flex-direction:column; }.camera-config button { min-height:42px; }.schedule-card { padding:18px 12px; }.mode-buttons { grid-template-columns:1fr; }.all-day-schedule { grid-template-columns:auto 1fr; }.all-day-schedule button { grid-column:1/-1; }.custom-schedule { padding:14px 10px; }.day-picker { grid-template-columns:repeat(4,1fr); }.time-range { grid-template-columns:1fr; }.time-range > b { display:none; }
+  .household-fields > div { grid-template-columns:1fr; }.security-center { padding:20px 15px; }.security-heading { align-items:stretch; flex-direction:column; }.security-layout { grid-template-columns:1fr; }.dual-camera-grid { grid-template-columns:1fr; }.camera-screen { height:320px; }.quick-controls { grid-template-columns:1fr; }.camera-config { flex-direction:column; }.camera-config button { min-height:42px; }.schedule-card { padding:18px 12px; }.mode-buttons { grid-template-columns:1fr; }.all-day-schedule { grid-template-columns:auto 1fr; }.all-day-schedule button { grid-column:1/-1; }.custom-schedule { padding:14px 10px; }.day-picker { grid-template-columns:repeat(4,1fr); }.time-range { grid-template-columns:1fr; }.time-range > b { display:none; }
   .chat-form { flex-direction:column; }.chat-form button { min-height:43px; }.chat-message { max-width:88%; }.chat-modal .request-chat { min-height:0; }.chat-modal { top:8px; bottom:8px; width:calc(100% - 16px); height:auto; max-height:none; }
   .camera-permission { align-items:stretch; flex-direction:column; }.camera-permission strong { text-align:center; }.access-code-form { flex-direction:column; }.camera-admin-modal { top:8px; bottom:8px; width:calc(100% - 16px); }
   .appointment-card,.admin-appointments { padding:20px 15px; }.appointment-picker { grid-template-columns:1fr; }.time-slots { grid-template-columns:repeat(2,1fr); }.appointment-current { align-items:flex-start; flex-direction:column; }.appointment-list article { grid-template-columns:auto 1fr; }.appointment-list select { grid-column:1/-1; }.appointment-expanded-details { grid-template-columns:1fr; }.appointment-expanded-details .wide { grid-column:auto; }.date-squares { grid-template-columns:repeat(3,1fr); max-height:360px; }.appointment-compact-header { align-items:stretch; flex-direction:column; }.appointment-open { width:100%; }

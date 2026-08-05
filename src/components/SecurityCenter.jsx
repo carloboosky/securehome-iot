@@ -57,6 +57,8 @@ function SecurityCenter({ requestId }) {
   const [configuredCameras, setConfiguredCameras] = useState([]);
   const [cameraUrl, setCameraUrl] = useState("");
   const [cameraOnline, setCameraOnline] = useState(false);
+  const [secondaryCameraUrl, setSecondaryCameraUrl] = useState("");
+  const [secondaryCameraOnline, setSecondaryCameraOnline] = useState(false);
   const [scheduleDraft, setScheduleDraft] = useState(() => ({
     mode: config.mode,
     days: config.days,
@@ -192,6 +194,34 @@ function SecurityCenter({ requestId }) {
       if (refreshTimer) window.clearTimeout(refreshTimer);
     };
   }, [configuredCameraUrl]);
+
+  const secondaryConfiguredUrl = configuredCameras[1]?.stream_url || "";
+
+  useEffect(() => {
+    if (!secondaryConfiguredUrl) {
+      return undefined;
+    }
+    let active = true;
+    let refreshTimer;
+    async function refreshSecondaryStream() {
+      try {
+        const secureUrl = await getSecureCameraStreamUrl(secondaryConfiguredUrl);
+        if (!active) return;
+        setSecondaryCameraUrl(secureUrl);
+        refreshTimer = window.setTimeout(refreshSecondaryStream, STREAM_TOKEN_REFRESH_MS);
+      } catch (error) {
+        if (!active) return;
+        setSecondaryCameraOnline(false);
+        setSecondaryCameraUrl("");
+        setNotice(`No se pudo abrir la Cámara 2: ${error.message}`);
+      }
+    }
+    refreshSecondaryStream();
+    return () => {
+      active = false;
+      if (refreshTimer) window.clearTimeout(refreshTimer);
+    };
+  }, [secondaryConfiguredUrl]);
 
   useEffect(() => {
     let cancelled = false;
@@ -366,6 +396,17 @@ function SecurityCenter({ requestId }) {
         .catch(error => setNotice(error.message));
       retryTimeoutRef.current = null;
     }, 3000);
+  }
+
+  function retrySecondaryCameraStream() {
+    setSecondaryCameraOnline(false);
+    getSecureCameraStreamUrl(secondaryConfiguredUrl, { forceRefresh: true })
+      .then(secureUrl => {
+        const retryUrl = new URL(secureUrl);
+        retryUrl.searchParams.set("t", Date.now().toString());
+        setSecondaryCameraUrl(retryUrl.toString());
+      })
+      .catch(error => setNotice(`La Cámara 2 perdió la conexión: ${error.message}`));
   }
 
   async function openCameraFullscreen() {
@@ -618,40 +659,26 @@ function SecurityCenter({ requestId }) {
 
       <div className="security-layout">
         <article className="camera-panel" ref={cameraPanelRef}>
-          {configuredCameras.length > 1 && <div className="camera-switcher client-camera-switcher" aria-label="Tus cámaras">
-            {configuredCameras.map((camera, index) => <button
-              type="button"
-              className={configuredCameraUrl === camera.stream_url ? "selected" : ""}
-              onClick={() => {
-                setCameraOnline(false);
-                setCameraUrl("");
-                setConfiguredCameraUrl(camera.stream_url);
-              }}
-              key={camera.stream_url}
-            >Cámara {index + 1}</button>)}
-          </div>}
-          <div className="camera-topbar">
-            <div><i className={cameraOnline ? "online" : ""}/><b>Cámara {Math.max(1, configuredCameras.findIndex(camera => camera.stream_url === configuredCameraUrl) + 1)}</b></div>
-            <div className="camera-topbar-actions">
-              <span>{cameraOnline ? "EN VIVO" : configuredCameraUrl ? "CONECTANDO" : "SIN CONFIGURAR"}</span>
-              {configuredCameraUrl && <button type="button" className="fullscreen-button" onClick={openCameraFullscreen} aria-label="Ver cámara en pantalla completa"><Maximize aria-hidden="true"/> Pantalla completa</button>}
-            </div>
+          <div className="dual-camera-heading">
+            <div><Video aria-hidden="true"/><span><b>Vista de cámaras</b><small>Monitoreo simultáneo del sistema</small></span></div>
+            {configuredCameraUrl && <button type="button" className="fullscreen-button" onClick={openCameraFullscreen} aria-label="Ver cámaras en pantalla completa"><Maximize aria-hidden="true"/> Pantalla completa</button>}
           </div>
-          <div className="camera-screen">
-            {cameraUrl ? <>
-              <img
-                ref={imgRef}
-                crossOrigin="anonymous"
-                src={cameraUrl}
-                alt="Transmisión en vivo de la cámara de seguridad"
-                onLoad={() => {
-                  setCameraOnline(true);
-                  setNotice("");
-                }}
-                onError={retryCameraStream}
-              />
-              <canvas ref={canvasRef} aria-hidden="true" />
-            </> : <div className="camera-placeholder"><span><Video aria-hidden="true"/></span><b>{configuredCameraUrl ? "Cargando cámara segura" : "Cámara pendiente de configuración"}</b><p>{configuredCameraUrl ? "Validando tu sesión y solicitando acceso temporal…" : "El administrador debe asignar al menos una cámara a tu solicitud."}</p></div>}
+          <div className={`dual-camera-grid ${secondaryConfiguredUrl ? "has-two" : ""}`}>
+            <section className="camera-feed">
+              <div className="camera-topbar"><div><Video aria-hidden="true"/><i className={cameraOnline ? "online" : ""}/><b>Cámara 1</b></div><span>{cameraOnline ? "EN VIVO" : configuredCameraUrl ? "CONECTANDO" : "SIN CONFIGURAR"}</span></div>
+              <div className="camera-screen">
+                {cameraUrl ? <>
+                  <img ref={imgRef} crossOrigin="anonymous" src={cameraUrl} alt="Transmisión en vivo de la Cámara 1" onLoad={() => { setCameraOnline(true); setNotice(""); }} onError={retryCameraStream}/>
+                  <canvas ref={canvasRef} aria-hidden="true" />
+                </> : <div className="camera-placeholder"><span><Video aria-hidden="true"/></span><b>{configuredCameraUrl ? "Cargando Cámara 1" : "Cámara 1 sin configurar"}</b><p>{configuredCameraUrl ? "Validando la transmisión segura…" : "El administrador debe asignar esta cámara."}</p></div>}
+              </div>
+            </section>
+            <section className="camera-feed">
+              <div className="camera-topbar"><div><Video aria-hidden="true"/><i className={secondaryCameraOnline ? "online" : ""}/><b>Cámara 2</b></div><span>{secondaryCameraOnline ? "EN VIVO" : secondaryConfiguredUrl ? "CONECTANDO" : "SIN CONFIGURAR"}</span></div>
+              <div className="camera-screen">
+                {secondaryCameraUrl ? <img crossOrigin="anonymous" src={secondaryCameraUrl} alt="Transmisión en vivo de la Cámara 2" onLoad={() => setSecondaryCameraOnline(true)} onError={retrySecondaryCameraStream}/> : <div className="camera-placeholder"><span><Video aria-hidden="true"/></span><b>{secondaryConfiguredUrl ? "Cargando Cámara 2" : "Cámara 2 sin configurar"}</b><p>{secondaryConfiguredUrl ? "Validando la transmisión segura…" : "El administrador debe asignar una segunda cámara."}</p></div>}
+              </div>
+            </section>
           </div>
           <div className="camera-permission">
             <div><b>Acceso temporal para soporte</b><span>El administrador debe solicitar acceso. Recibirás un código nuevo que caduca en 5 minutos.</span></div>
