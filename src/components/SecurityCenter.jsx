@@ -243,6 +243,14 @@ function SecurityCenter({ requestId }) {
                   && now - lastAlertAtRef.current >= ALERT_COOLDOWN_MS
                 ) {
                   lastAlertAtRef.current = now;
+                  
+                  let imagen_base64 = null;
+                  try {
+                    imagen_base64 = analysisCanvas.toDataURL('image/jpeg', 0.7);
+                  } catch (e) {
+                    console.warn("No se pudo extraer la imagen para Telegram:", e);
+                  }
+
                   fetch(ALERTS_URL, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -250,6 +258,7 @@ function SecurityCenter({ requestId }) {
                       message: "🚨 INTRUSIÓN: Persona detectada en el stream",
                       confidence: Math.round(category.score * 100),
                       tipo_evento: "Persona",
+                      imagen_base64: imagen_base64
                     }),
                   }).catch(error => console.error("No se pudo enviar la alerta:", error));
                 }
