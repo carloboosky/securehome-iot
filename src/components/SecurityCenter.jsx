@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { FilesetResolver, ObjectDetector } from "@mediapipe/tasks-vision";
-import { Activity, BellRing, CalendarDays, Clock3, Maximize, Moon, Nfc, PawPrint, Phone, Radio, Send, ShieldCheck, Sun, TriangleAlert, Users, Video } from "lucide-react";
+import { BellRing, CalendarDays, Clock3, Maximize, Moon, Nfc, PawPrint, Phone, Radio, Send, ShieldCheck, Sun, TriangleAlert, Users, Video } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { getSecureCameraStreamUrl } from "../lib/secureCamera";
 
