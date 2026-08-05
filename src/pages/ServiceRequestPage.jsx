@@ -20,6 +20,7 @@ function ServiceRequestPage() {
     householdMembers: "1",
     under13Count: "0",
     notes: "",
+    acceptsTerms: false,
   });
 
   useEffect(() => {
@@ -51,8 +52,8 @@ function ServiceRequestPage() {
   }, [navigate]);
 
   function change(event) {
-    const { name, value } = event.target;
-    const cleanValue = name === "phone" ? value.replace(/\D/g, "").slice(0, 10) : value;
+    const { name, value, type, checked } = event.target;
+    const cleanValue = type === "checkbox" ? checked : name === "phone" ? value.replace(/\D/g, "").slice(0, 10) : value;
     setForm(previous => ({ ...previous, [name]: cleanValue }));
     setErrors(previous => ({
       ...previous,
@@ -73,6 +74,7 @@ function ServiceRequestPage() {
     if (form.address.trim().length < 8) nextErrors.address = "Escribe una dirección más completa.";
     if (Number(form.householdMembers) < 1) nextErrors.householdMembers = "Debe existir al menos un integrante.";
     if (Number(form.under13Count) > Number(form.householdMembers)) nextErrors.under13Count = "Los menores no pueden superar el total de integrantes.";
+    if (!form.acceptsTerms) nextErrors.acceptsTerms = "Debes aceptar los términos y la permanencia mínima de 4 meses.";
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) {
       setMessage("Revisa los campos marcados antes de continuar.");
@@ -81,6 +83,14 @@ function ServiceRequestPage() {
 
     setSaving(true);
     setMessage("");
+    const { error: termsError } = await supabase.auth.updateUser({
+      data: { terms_accepted_at: new Date().toISOString(), minimum_term_months: 4 },
+    });
+    if (termsError) {
+      setMessage(`No se pudo registrar la aceptación de términos: ${termsError.message}`);
+      setSaving(false);
+      return;
+    }
     const { error: profileError } = await supabase.from("profiles").update({ phone: form.phone }).eq("id", user.id);
     if (profileError) {
       setMessage(`No se pudo guardar el teléfono: ${profileError.message}`);
@@ -165,6 +175,11 @@ function ServiceRequestPage() {
           </fieldset>
           <label>Información adicional <small className="password-help">(opcional)</small>
             <textarea name="notes" placeholder="Cuéntanos detalles del espacio o el horario de contacto" value={form.notes} onChange={change}/>
+          </label>
+          <label className="terms-acceptance">
+            <input type="checkbox" name="acceptsTerms" checked={form.acceptsTerms} onChange={change}/>
+            <span>Acepto los <Link to="/terminos" target="_blank">términos y condiciones</Link> y la permanencia mínima obligatoria de 4 meses.</span>
+            {errors.acceptsTerms && <span className="field-error">{errors.acceptsTerms}</span>}
           </label>
           {message && <p className="auth-message" role="alert">{message}</p>}
           <button type="submit" disabled={saving}>{saving ? "Guardando solicitud..." : "Finalizar y ver mi panel"}</button>

@@ -9,6 +9,7 @@ import ServiceRequestPage from "./pages/ServiceRequestPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import SystemDesignPage from "./pages/SystemDesignPage";
+import TermsPage from "./pages/TermsPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthProvider from "./contexts/AuthContext";
 import "./App.css";
@@ -22,6 +23,7 @@ function App() {
         <Route path="/recuperar-contrasena" element={<ForgotPasswordPage />} />
         <Route path="/restablecer-contrasena" element={<ResetPasswordPage />} />
         <Route path="/registro" element={<RegisterPage />} />
+        <Route path="/terminos" element={<TermsPage />} />
         <Route path="/completar-registro" element={<ProtectedRoute allow="client"><ServiceRequestPage /></ProtectedRoute>} />
         <Route path="/disena-tu-sistema" element={<ProtectedRoute allow="client"><SystemDesignPage /></ProtectedRoute>} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />

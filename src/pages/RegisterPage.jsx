@@ -21,6 +21,7 @@ function RegisterPage() {
     integrantesHogar: "1",
     menoresTrece: "0",
     notas: "",
+    aceptaTerminos: false,
   });
 
   const [errores, setErrores] = useState({});
@@ -73,6 +74,7 @@ function RegisterPage() {
     if (name === "menoresTrece" && Number(valor) > Number(datos.integrantesHogar)) {
       return "Los menores no pueden superar el total de integrantes.";
     }
+    if (name === "aceptaTerminos" && !valor) return "Debes aceptar los términos y la permanencia mínima de 4 meses.";
     return "";
   }
 
@@ -97,9 +99,9 @@ function RegisterPage() {
   }, []);
 
   function manejarCambio(evento) {
-    const { name, value } = evento.target;
+    const { name, value, type, checked } = evento.target;
 
-    let nuevoValor = value;
+    let nuevoValor = type === "checkbox" ? checked : value;
 
     if (name === "telefono") {
       nuevoValor = value.replace(/\D/g, "").slice(0, 10);
@@ -229,6 +231,10 @@ function RegisterPage() {
         "Los menores no pueden superar el total de integrantes.";
     }
 
+    if (!formulario.aceptaTerminos) {
+      nuevosErrores.aceptaTerminos = "Debes aceptar los términos y la permanencia mínima de 4 meses.";
+    }
+
     setErrores(nuevosErrores);
 
     return Object.keys(nuevosErrores).length === 0;
@@ -330,6 +336,8 @@ function RegisterPage() {
         data: {
           full_name: formulario.nombre.trim(),
           phone: formulario.telefono,
+          terms_accepted_at: new Date().toISOString(),
+          minimum_term_months: 4,
         },
       },
     });
@@ -622,6 +630,12 @@ function RegisterPage() {
               onChange={manejarCambio}
               placeholder="Detalles de la instalación"
             />
+          </label>
+
+          <label className="terms-acceptance">
+            <input type="checkbox" name="aceptaTerminos" checked={formulario.aceptaTerminos} onChange={manejarCambio}/>
+            <span>Acepto los <Link to="/terminos" target="_blank">términos y condiciones</Link> y la permanencia mínima obligatoria de 4 meses.</span>
+            {errores.aceptaTerminos && <span className="field-error">{errores.aceptaTerminos}</span>}
           </label>
 
           {mensajeGeneral && (

@@ -11,9 +11,9 @@ const services = [
 ];
 
 const plans = [
-  { name: "Esencial", text: "Vigilancia básica para espacios pequeños", features: ["1 cámara HD", "1 sensor de movimiento", "Monitoreo desde el móvil"] },
-  { name: "Protección Plus", text: "Más cobertura mediante sensores adicionales", features: ["1 cámara HD", "3 sensores de movimiento", "Alertas por Telegram"], featured: true },
-  { name: "Total", text: "El sistema completo con más puntos de detección", features: ["1 cámara HD", "5 sensores de movimiento", "Telegram + acceso NFC"] },
+  { name: "Esencial", text: "Vigilancia práctica para espacios pequeños", initialPrice: 15, monthlyPrice: 3.5, features: ["1 cámara HD", "Monitoreo desde la página web", "Alertas por Telegram"] },
+  { name: "Protección Plus", text: "Más cobertura para proteger los puntos principales", initialPrice: 20, monthlyPrice: 4.5, features: ["2 cámaras HD", "1 sensor de movimiento", "Monitoreo desde la página web", "Alertas por Telegram"], featured: true },
+  { name: "Total", text: "El sistema completo con control de acceso", initialPrice: 25, monthlyPrice: 6, features: ["2 cámaras HD", "2 sensores de movimiento", "Bloqueo y desbloqueo mediante NFC", "Acceso a la página web", "Alertas por Telegram"] },
 ];
 
 function Icon({ name }) {
@@ -82,7 +82,7 @@ function HomePage() {
             <div className="trust-row">
               <span><Icon name="check"/> Instalación profesional</span>
               <span><Icon name="check"/> Soporte local</span>
-              <span><Icon name="check"/> Sin permanencia</span>
+              <span><Icon name="check"/> Permanencia mínima de 4 meses</span>
             </div>
           </div>
           <div className="hero-visual">
@@ -112,10 +112,12 @@ function HomePage() {
             {plans.map(plan => <article className={`plan-card ${plan.featured ? "featured" : ""}`} key={plan.name}>
               {plan.featured && <span className="popular">Más elegido</span>}
               <h3>{plan.name}</h3><p>{plan.text}</p>
+              <div className="plan-price"><b>${plan.initialPrice}</b><span>pago inicial</span><small>+ ${plan.monthlyPrice.toFixed(2)}/mes</small></div>
               <ul>{plan.features.map(feature => <li key={feature}><Icon name="check"/>{feature}</li>)}</ul>
               <Link className={`btn-link ${plan.featured ? "btn-primary" : "btn-outline"}`} to="/registro">Elegir plan</Link>
             </article>)}
           </div>
+          <p className="plans-terms-note">Todos los planes requieren una permanencia mínima de 4 meses. Consulta los <Link to="/terminos">términos y condiciones</Link>.</p>
         </section>
 
         <section className="cta" id="contacto">
