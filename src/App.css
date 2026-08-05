@@ -115,6 +115,22 @@ input:focus,select:focus,textarea:focus { border-color:var(--blue); box-shadow:0
 .verification-form input { text-align:center; font-size:24px; font-weight:800; letter-spacing:.35em; }
 .forgot-password-link { justify-self:end; margin-top:1px; font-size:11px; text-decoration:none; }
 .forgot-password-link:hover { text-decoration:underline; }
+.recovery-icon { width:48px; height:48px; display:grid; place-items:center; margin-bottom:15px; border-radius:14px; color:var(--blue); background:#edf3ff; }
+.recovery-icon svg { width:25px; height:25px; }
+.recovery-input-wrap { position:relative; display:block; }
+.recovery-input-wrap svg { position:absolute; top:50%; left:13px; width:18px; height:18px; transform:translateY(-50%); color:#8490a3; }
+.recovery-input-wrap input { padding-left:42px; }
+.recovery-help { margin-top:-7px; color:#7a8599; font-size:11px; line-height:1.5; }
+.recovery-success { display:grid; justify-items:center; gap:14px; padding-top:8px; text-align:center; }
+.recovery-success > span { width:65px; height:65px; display:grid; place-items:center; border-radius:50%; color:#11826a; background:#dff8f1; }
+.recovery-success > span svg { width:34px; height:34px; }
+.recovery-success h1 { margin:0; }
+.recovery-success > p { margin:0; color:var(--muted); line-height:1.65; }
+.recovery-success > p strong { color:var(--navy); overflow-wrap:anywhere; }
+.recovery-success > div { display:grid; gap:5px; padding:13px; border-radius:10px; color:#536079; background:#f4f7fb; font-size:12px; }
+.recovery-success > div small { line-height:1.5; }
+.recovery-success button { width:100%; min-height:46px; border:0; border-radius:10px; color:white; background:var(--blue); cursor:pointer; font-weight:800; }
+.recovery-success > a { color:var(--blue); font-size:13px; font-weight:800; text-decoration:none; }
 .password-input-wrap { position:relative; display:block; }
 .password-input-wrap input { padding-right:50px; }
 .password-visibility-button { position:absolute; top:50%; right:8px; transform:translateY(-50%); width:36px; height:36px; min-height:0!important; display:grid; place-items:center; padding:0; border:0; border-radius:8px; color:#536079!important; background:transparent!important; cursor:pointer; font-size:17px; }
