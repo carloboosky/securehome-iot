@@ -5,6 +5,7 @@ import SecurityCenter from "../components/SecurityCenter";
 import RequestChat from "../components/RequestChat";
 import AppointmentScheduler from "../components/AppointmentScheduler";
 import MessageNotifications from "../components/MessageNotifications";
+import { Check, Home, House, MapPin, Palette, Phone, ShieldCheck, Sparkles } from "lucide-react";
 
 function ClientDashboard() {
   const navigate = useNavigate();
@@ -164,13 +165,13 @@ function ClientDashboard() {
       <header className="dashboard-header">
         <div>
           <Link className="dashboard-brand dashboard-brand-link" to="/">SecureHome IoT</Link>
-          <h1>Hola, {perfil?.full_name || "Cliente"} 👋</h1>
+          <h1 className="dashboard-greeting">Hola, {perfil?.full_name || "Cliente"} <Sparkles aria-hidden="true"/></h1>
           <p>Consulta el estado de tu servicio de seguridad.</p>
         </div>
 
         <div className="dashboard-header-actions">
-          <Link className="home-button" to="/disena-tu-sistema">🎨 Mi diseño</Link>
-          <Link className="home-button" to="/">⌂ Página principal</Link>
+          <Link className="home-button" to="/disena-tu-sistema"><Palette aria-hidden="true"/> Mi diseño</Link>
+          <Link className="home-button" to="/"><Home aria-hidden="true"/> Página principal</Link>
           <button type="button" className="logout-button" onClick={cerrarSesion}>Cerrar sesión</button>
         </div>
       </header>
@@ -182,7 +183,7 @@ function ClientDashboard() {
       )}
       {actualizacion && (
         <div className="realtime-notice" role="status">
-          <span>✓</span>
+          <span><Check aria-hidden="true"/></span>
           <div><b>Actualización en tiempo real</b><p>{actualizacion}</p></div>
           <button type="button" aria-label="Cerrar notificación" onClick={() => setActualizacion("")}>×</button>
         </div>
@@ -191,7 +192,7 @@ function ClientDashboard() {
 
       {!solicitud ? (
         <section className="empty-request">
-          <span className="empty-request-icon">🏠</span>
+          <span className="empty-request-icon"><House aria-hidden="true"/></span>
           <h2>No tienes una solicitud registrada</h2>
           <p>
             Primero debes completar la información del servicio que deseas
@@ -231,7 +232,7 @@ function ClientDashboard() {
 
           <section className="dashboard-grid">
             <article className="dashboard-card">
-              <span className="dashboard-icon">🛡️</span>
+              <span className="dashboard-icon"><ShieldCheck aria-hidden="true"/></span>
               <h2>Plan contratado</h2>
 
               <p>
@@ -242,7 +243,7 @@ function ClientDashboard() {
             </article>
 
             <article className="dashboard-card">
-              <span className="dashboard-icon">🏠</span>
+              <span className="dashboard-icon"><House aria-hidden="true"/></span>
               <h2>Tipo de propiedad</h2>
 
               <p>
@@ -251,14 +252,14 @@ function ClientDashboard() {
             </article>
 
             <article className="dashboard-card">
-              <span className="dashboard-icon">📍</span>
+              <span className="dashboard-icon"><MapPin aria-hidden="true"/></span>
               <h2>Dirección</h2>
 
               <p>{solicitud.installation_address || "No especificada"}</p>
             </article>
 
             <article className="dashboard-card">
-              <span className="dashboard-icon">📞</span>
+              <span className="dashboard-icon"><Phone aria-hidden="true"/></span>
               <h2>Teléfono</h2>
 
               <p>{perfil?.phone || "No registrado"}</p>

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { FilesetResolver, ObjectDetector } from "@mediapipe/tasks-vision";
-import { BellRing, CalendarDays, Clock3, Maximize, Moon, Nfc, PawPrint, Phone, Radio, Send, ShieldCheck, Sun, TriangleAlert, Users, Video } from "lucide-react";
+import { BellRing, CalendarDays, Check, Clock3, Maximize, Moon, Nfc, PawPrint, Phone, Power, Radio, Send, ShieldCheck, Sun, TriangleAlert, Users, Video } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { getSecureCameraStreamUrl } from "../lib/secureCamera";
 
@@ -650,7 +650,7 @@ function SecurityCenter({ requestId }) {
           <p>Supervisa la cámara y configura la protección de tu hogar.</p>
         </div>
         <button type="button" className={`system-toggle ${config.armed ? "is-armed" : ""}`} onClick={() => update("armed", !config.armed)}>
-          <span>{config.armed ? "✓" : "○"}</span>
+          {config.armed ? <ShieldCheck aria-hidden="true"/> : <Power aria-hidden="true"/>}
           {config.armed ? "Sistema activado" : "Activar sistema"}
         </button>
       </div>
@@ -773,7 +773,7 @@ function SecurityCenter({ requestId }) {
         {scheduleDraft.mode === "custom" && <div className="custom-schedule">
           <div className="schedule-days">
             <span>Días activos</span>
-            <div className="day-picker">{days.map(([value, label]) => <button type="button" aria-label={value} className={scheduleDraft.days.includes(value) ? "selected" : ""} onClick={() => toggleDay(value)} key={value}><i>✓</i>{label}</button>)}</div>
+            <div className="day-picker">{days.map(([value, label]) => <button type="button" aria-label={value} className={scheduleDraft.days.includes(value) ? "selected" : ""} onClick={() => toggleDay(value)} key={value}><i><Check aria-hidden="true"/></i>{label}</button>)}</div>
           </div>
           <div className="time-range">
             <label><span><Moon aria-hidden="true"/> Hora de inicio</span><select value={scheduleDraft.start} onChange={event => setScheduleDraft(previous => ({ ...previous, start: event.target.value }))}>{timeOptions.map(time => <option value={time} key={time}>{time}</option>)}</select></label>
@@ -781,7 +781,7 @@ function SecurityCenter({ requestId }) {
             <label><span><Sun aria-hidden="true"/> Hora de fin</span><select value={scheduleDraft.end} onChange={event => setScheduleDraft(previous => ({ ...previous, end: event.target.value }))}>{timeOptions.map(time => <option value={time} key={time}>{time}</option>)}</select></label>
           </div>
           <p className="schedule-summary"><ShieldCheck aria-hidden="true"/> El sistema se activará de <strong>{scheduleDraft.start}</strong> a <strong>{scheduleDraft.end}</strong> los días seleccionados.</p>
-          <button type="button" className="confirm-schedule-button" onClick={confirmCustomSchedule}>✓ Confirmar horario personalizado</button>
+          <button type="button" className="confirm-schedule-button" onClick={confirmCustomSchedule}><Check aria-hidden="true"/> Confirmar horario personalizado</button>
         </div>}
         <p className="saved-schedule">Configuración guardada: <strong>{config.mode === "always" ? "protección todo el día" : `${config.start} a ${config.end}`}</strong></p>
       </article>
