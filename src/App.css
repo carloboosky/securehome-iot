@@ -295,11 +295,7 @@ input:focus,select:focus,textarea:focus { border-color:var(--blue); box-shadow:0
 .camera-config { display:flex; gap:8px; padding:13px; background:#172338; }
 .camera-config input { min-width:0; border-color:#38475e; color:white; background:#101827; }
 .camera-config button { padding:0 16px; border:0; border-radius:9px; color:white; background:var(--blue); cursor:pointer; font-weight:800; }
-.quick-controls { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); grid-template-areas:"alarm nfc telegram" "sensors sensors telegram"; gap:16px; align-items:stretch; }
-.quick-controls > :nth-child(1) { grid-area:alarm; }
-.quick-controls > :nth-child(2) { grid-area:nfc; }
-.quick-controls > :nth-child(3) { grid-area:telegram; }
-.quick-controls > :nth-child(4) { grid-area:sensors; }
+.quick-controls { display:grid; grid-template-columns:1fr; gap:16px; align-items:stretch; }
 .control-card { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:15px; padding:22px; border:1px solid var(--line); border-radius:16px; background:#fff; box-shadow:0 7px 22px rgba(16,29,54,.045); }
 .control-icon { display:grid; place-items:center; width:46px; height:46px; border-radius:13px; color:var(--blue); background:#edf3ff; }
 .control-icon svg { width:24px; height:24px; stroke-width:2; }

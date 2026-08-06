@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { FilesetResolver, ObjectDetector } from "@mediapipe/tasks-vision";
-import { BellRing, Info, Maximize, Nfc, PawPrint, Power, Radio, Send, ShieldCheck, TriangleAlert, Users, Video } from "lucide-react";
+import { Info, Maximize, PawPrint, Power, Send, ShieldCheck, TriangleAlert, Users, Video } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { getSecureCameraStreamUrl } from "../lib/secureCamera";
 
@@ -13,7 +13,6 @@ const DETECTION_MAX_WIDTH = 512;
 
 const defaultConfig = {
   armed: false,
-  nfcDoor: false,
   telegram: false,
 };
 
@@ -37,7 +36,6 @@ function SecurityCenter({ requestId }) {
   const [accessExpires, setAccessExpires] = useState("");
   const [urgentDismissed, setUrgentDismissed] = useState(false);
   const [notice, setNotice] = useState("");
-  const [sounding, setSounding] = useState(false);
   const [telegramChatId, setTelegramChatId] = useState("");
   const [linkingTelegram, setLinkingTelegram] = useState(false);
   const [residents, setResidents] = useState([]);
@@ -554,32 +552,6 @@ function SecurityCenter({ requestId }) {
     setPets(previous => previous.filter(item => item.id !== pet.id));
   }
 
-  function testAlarm() {
-    setSounding(true);
-    setNotice("Prueba de sirena en este dispositivo. Esto no activa todavía la sirena física.");
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) {
-      setSounding(false);
-      return;
-    }
-    const context = new AudioContextClass();
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    oscillator.type = "square";
-    oscillator.frequency.setValueAtTime(720, context.currentTime);
-    oscillator.frequency.linearRampToValueAtTime(940, context.currentTime + 1.4);
-    gain.gain.setValueAtTime(.12, context.currentTime);
-    gain.gain.setValueAtTime(0, context.currentTime + 1.5);
-    oscillator.connect(gain);
-    gain.connect(context.destination);
-    oscillator.start();
-    oscillator.stop(context.currentTime + 1.5);
-    oscillator.onended = () => {
-      context.close();
-      setSounding(false);
-    };
-  }
-
   return (
     <section className="security-center">
       <div className="security-heading">
@@ -626,16 +598,6 @@ function SecurityCenter({ requestId }) {
         </article>
 
         <aside className="quick-controls">
-          <article className="control-card alarm-card">
-            <span className="control-icon alarm-icon"><BellRing aria-hidden="true"/></span>
-            <div><h3>Sirena</h3><p>Prueba el sonido de alarma.</p></div>
-            <button type="button" disabled={sounding} onClick={testAlarm}>{sounding ? "Sonando..." : "Sonar alarma"}</button>
-          </article>
-          <article className="control-card">
-            <span className="control-icon"><Nfc aria-hidden="true"/></span>
-            <div><h3>Alarma de puerta NFC</h3><p>Avisa cuando se abra sin una tarjeta autorizada.</p></div>
-            <button type="button" className={`switch ${config.nfcDoor ? "on" : ""}`} aria-label="Activar alarma NFC" aria-pressed={config.nfcDoor} onClick={() => update("nfcDoor", !config.nfcDoor)}><span/></button>
-          </article>
           <article className="control-card telegram-control-card">
             <span className="control-icon"><Send aria-hidden="true"/></span>
             <div><h3>Alertas de Telegram</h3><p>Envía los eventos al chat vinculado.</p></div>
@@ -652,11 +614,6 @@ function SecurityCenter({ requestId }) {
               <p><span>2</span> Inicia el bot oficial de seguridad.</p>
               <a className="primary" href="https://t.me/Iotsecurity_g5_bot" target="_blank" rel="noreferrer"><Send aria-hidden="true"/> Abrir @Iotsecurity_g5_bot</a>
             </div>
-          </article>
-          <article className="control-card">
-            <span className="control-icon"><Radio aria-hidden="true"/></span>
-            <div><h3>Sensores</h3><p>Los sensores se vinculan durante la instalación.</p></div>
-            <span className="device-badge">Pendiente</span>
           </article>
         </aside>
       </div>
