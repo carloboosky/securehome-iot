@@ -8,6 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "mcp": "node --env-file=.env.mcp mcp/server.js",
+    "observability:demo": "node mcp/observability-demo.js",
+    "test": "node --test",
     "preview": "vite preview"
   },
   "dependencies": {

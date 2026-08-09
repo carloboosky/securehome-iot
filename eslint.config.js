@@ -19,7 +19,7 @@ export default defineConfig([
     },
   },
   {
-    files: ['mcp/**/*.js'],
+    files: ['mcp/**/*.js', 'test/**/*.js'],
     languageOptions: { globals: globals.node },
   },
 ])
