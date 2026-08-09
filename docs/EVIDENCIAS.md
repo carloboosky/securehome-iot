@@ -34,6 +34,8 @@ npm run build
 - Arquitectura visual: `public/infografia-securehome-iot-final.png`.
 - SQL verificable: políticas RLS, funciones y concesiones en `supabase_*.sql`.
 - Contrato de IA: herramientas con validación Zod en `mcp/server.js`.
+- Trazabilidad PE-3.4: [comparación normal frente a fallo](./evidencias/trazabilidad-normal-vs-fallo.txt)
+  y [documento de diagnóstico](./PE-3.4-TRAZABILIDAD.md).
 
 ## Capturas del sistema
 

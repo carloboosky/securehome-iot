@@ -1,0 +1,20 @@
+EVIDENCIA PE-3.4 - TRAZABILIDAD Y MONITOREO
+Generada con: npm run observability:demo
+Fecha: 2026-08-09
+
+CASO NORMAL
+{"service":"securehome-mcp","level":"info","event":"trace.started","correlation_id":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","operation":"get-security-overview"}
+{"service":"securehome-mcp","level":"info","event":"span.started","correlation_id":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","operation":"get-security-overview","span":"database.service_requests.select"}
+{"service":"securehome-mcp","level":"info","event":"span.finished","correlation_id":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","operation":"get-security-overview","span":"database.service_requests.select","outcome":"success","duration_ms":20.34}
+{"service":"securehome-mcp","level":"info","event":"trace.finished","correlation_id":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","operation":"get-security-overview","outcome":"success","duration_ms":24.54}
+
+CASO DEGRADADO/FALLIDO
+{"service":"securehome-mcp","level":"info","event":"trace.started","correlation_id":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","operation":"get-security-overview"}
+{"service":"securehome-mcp","level":"info","event":"span.started","correlation_id":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","operation":"get-security-overview","span":"database.camera_devices.select"}
+{"service":"securehome-mcp","level":"error","event":"span.finished","correlation_id":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","operation":"get-security-overview","span":"database.camera_devices.select","outcome":"error","duration_ms":200.51,"error_code":"PGRST301"}
+{"service":"securehome-mcp","level":"error","event":"trace.finished","correlation_id":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","operation":"get-security-overview","outcome":"error","duration_ms":200.64,"error_code":"PGRST301"}
+
+DIAGNOSTICO
+El span database.camera_devices.select concentra la latencia y termina con PGRST301.
+La coincidencia del correlation_id demuestra que ese paso pertenece a la misma
+solicitud y provoca el resultado fallido de la traza completa.

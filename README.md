@@ -8,6 +8,7 @@ Mínimo Producto Viable de una plataforma web para administrar instalaciones y m
 - Repositorio: https://github.com/carloboosky/securehome-iot
 - Documento técnico de la fase III: [ENTREGA_FASE_III.md](./ENTREGA_FASE_III.md)
 - Evidencia reproducible: [docs/EVIDENCIAS.md](./docs/EVIDENCIAS.md)
+- Práctica PE-3.4 de trazabilidad: [docs/PE-3.4-TRAZABILIDAD.md](./docs/PE-3.4-TRAZABILIDAD.md)
 
 ## Funcionalidades
 
