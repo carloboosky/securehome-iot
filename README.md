@@ -6,7 +6,8 @@ Mínimo Producto Viable de una plataforma web para administrar instalaciones y m
 
 - Aplicación: https://securehome-iot.vercel.app
 - Repositorio: https://github.com/carloboosky/securehome-iot
-- Informe del MVP: [ENTREGA_MVP.md](./ENTREGA_MVP.md)
+- Documento técnico de la fase III: [ENTREGA_FASE_III.md](./ENTREGA_FASE_III.md)
+- Evidencia reproducible: [docs/EVIDENCIAS.md](./docs/EVIDENCIAS.md)
 
 ## Funcionalidades
 
@@ -52,6 +53,10 @@ npm run lint
 npm run build
 npm run preview
 ```
+
+La integración continua ejecuta `npm ci`, lint y build en cada push y pull request.
+Consulta el procedimiento de despliegue y rollback en el
+[documento de operación](./docs/OPERACION.md).
 
 ## Servidor MCP
 
