@@ -35,6 +35,50 @@ npm run build
 - SQL verificable: políticas RLS, funciones y concesiones en `supabase_*.sql`.
 - Contrato de IA: herramientas con validación Zod en `mcp/server.js`.
 
+## Capturas del sistema
+
+Las siguientes evidencias muestran los flujos principales de SecureHome IoT en
+funcionamiento.
+
+### 1. Autenticación de usuarios
+
+La pantalla de autenticación permite el ingreso seguro de clientes y
+administradores mediante Supabase Auth.
+
+<p align="center">
+  <img src="./evidencias/autenticacion.png" alt="Pantalla de autenticación de SecureHome IoT" width="850">
+</p>
+
+### 2. Panel del cliente
+
+El cliente puede consultar su servicio, gestionar la información de su hogar y
+acceder únicamente a los recursos asociados con su cuenta.
+
+<p align="center">
+  <img src="./evidencias/022-panel-cliente.png" alt="Panel principal del cliente" width="850">
+</p>
+
+### 3. Panel de administración
+
+El administrador dispone de una vista centralizada para gestionar clientes,
+solicitudes, citas y dispositivos, respetando los controles de acceso definidos.
+
+<p align="center">
+  <img src="./evidencias/03-panel-administrador.png" alt="Panel de administración de SecureHome IoT" width="850">
+</p>
+
+### 4. Funcionalidad principal
+
+Esta captura evidencia la operación de uno de los módulos centrales del sistema,
+integrado con los servicios backend y las reglas de seguridad del proyecto.
+
+<p align="center">
+  <img src="./evidencias/04-funcionalidad-principal.png" alt="Funcionalidad principal de SecureHome IoT" width="850">
+</p>
+
+> **Protección de datos:** las evidencias académicas no deben mostrar contraseñas,
+> tokens, teléfonos, direcciones reales ni URL privadas de cámaras.
+
 ## Guion de demostración
 
 1. Registrar un cliente y confirmar el correo.
