@@ -35,7 +35,8 @@ npm run build
 - SQL verificable: políticas RLS, funciones y concesiones en `supabase_*.sql`.
 - Contrato de IA: herramientas con validación Zod en `mcp/server.js`.
 - Trazabilidad PE-3.4: [comparación normal frente a fallo](./evidencias/trazabilidad-normal-vs-fallo.txt)
-  y [documento de diagnóstico con capturas](./PE-3.4-TRAZABILIDAD.md).
+  y [documento de diagnóstico con capturas](./PE-3.4_CarrionCalo_Trazabilidad.md).
+- Análisis TA-3.4: [interpretación de señales, acciones y conclusión](./TA-3.4_CarrionCalo_Observabilidad.md).
 
 ## Capturas del sistema
 

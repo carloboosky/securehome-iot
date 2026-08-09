@@ -1,5 +1,9 @@
 # PE-3.4 — Trazabilidad y monitoreo
 
+**Estudiante:** Carrion Calo  
+**Actividad:** Práctica experimental PE-3.4 — Trazabilidad y monitoreo  
+**Proyecto:** SecureHome IoT
+
 ## 1. Flujo instrumentado
 
 Se instrumentó el flujo real de consulta **Resumen de seguridad**:

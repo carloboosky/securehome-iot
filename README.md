@@ -6,9 +6,10 @@ Mínimo Producto Viable de una plataforma web para administrar instalaciones y m
 
 - Aplicación: https://securehome-iot.vercel.app
 - Repositorio: https://github.com/carloboosky/securehome-iot
-- Documento técnico de la fase III: [ENTREGA_FASE_III.md](./ENTREGA_FASE_III.md)
+- Documento técnico de la fase III: [FASE-III_CarrionCalo_ProyectoFinal.md](./FASE-III_CarrionCalo_ProyectoFinal.md)
 - Evidencia reproducible: [docs/EVIDENCIAS.md](./docs/EVIDENCIAS.md)
-- Práctica PE-3.4 de trazabilidad: [docs/PE-3.4-TRAZABILIDAD.md](./docs/PE-3.4-TRAZABILIDAD.md)
+- Práctica PE-3.4 de trazabilidad: [docs/PE-3.4_CarrionCalo_Trazabilidad.md](./docs/PE-3.4_CarrionCalo_Trazabilidad.md)
+- Trabajo autónomo TA-3.4: [análisis de observabilidad y latencias](./docs/TA-3.4_CarrionCalo_Observabilidad.md)
 
 ## Funcionalidades
 

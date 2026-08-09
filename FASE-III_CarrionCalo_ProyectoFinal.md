@@ -1,5 +1,9 @@
 # SecureHome IoT — entrega técnica fase III
 
+**Estudiante:** Carrion Calo  
+**Actividad:** Proyecto final — Fase III  
+**Proyecto:** SecureHome IoT
+
 ## 1. Problema, alcance y arquitectura
 
 SecureHome IoT centraliza la contratación, instalación y supervisión de seguridad
