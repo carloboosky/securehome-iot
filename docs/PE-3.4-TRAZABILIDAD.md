@@ -71,6 +71,25 @@ npm run observability:demo
 | Resultado | `success` | `error` |
 | Código | ninguno | `PGRST301` |
 
+### Evidencia del caso normal
+
+La traza conserva el correlation ID `aaaaaaaa-...` durante todo el recorrido. El
+span de consulta termina correctamente y permite comparar su duración con la del
+flujo completo.
+
+<p align="center">
+  <img src="./evidencias/05-trazabilidad-caso-normal.png" alt="Traza estructurada del caso normal" width="900">
+</p>
+
+### Evidencia del caso degradado o fallido
+
+La segunda traza mantiene el correlation ID `bbbbbbbb-...`, registra mayor latencia
+y ubica el error `PGRST301` en `database.camera_devices.select`.
+
+<p align="center">
+  <img src="./evidencias/06-trazabilidad-caso-fallido.png" alt="Traza estructurada del caso degradado y fallido" width="900">
+</p>
+
 El script de demostración utiliza la misma implementación que el flujo real y sólo
 controla el tiempo/respuesta del adaptador para reproducir ambos escenarios sin
 alterar producción. Para evidencia real, se invoca la herramienta MCP con una
@@ -94,8 +113,8 @@ se investiga conectividad o saturación de Supabase.
 - Código: `mcp/observability.js` y `mcp/server.js`.
 - Pruebas: `test/observability.test.js`.
 - Salida comparativa: `docs/evidencias/trazabilidad-normal-vs-fallo.txt`.
-- Captura recomendada: terminal ejecutando `npm run observability:demo`, guardada como
-  `docs/evidencias/05-trazabilidad-normal-vs-fallo.png`.
+- Caso normal: `docs/evidencias/05-trazabilidad-caso-normal.png`.
+- Caso degradado: `docs/evidencias/06-trazabilidad-caso-fallido.png`.
 
 Los avances deben publicarse en commits separados, por ejemplo:
 
