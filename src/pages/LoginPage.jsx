@@ -1,14 +1,15 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
 function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [correo, setCorreo] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [mensaje, setMensaje] = useState("");
+  const [mensaje, setMensaje] = useState(location.state?.mensaje || "");
   const [cargando, setCargando] = useState(false);
 
   async function iniciarSesion(evento) {

@@ -54,6 +54,29 @@ function AppointmentScheduler({ requestId }) {
   }, [requestId]);
 
   useEffect(() => {
+    const channel = supabase
+      .channel(`client-appointment-${requestId}`)
+      .on("postgres_changes", {
+        event: "UPDATE",
+        schema: "public",
+        table: "installation_appointments",
+        filter: `request_id=eq.${requestId}`,
+      }, ({ new: updatedAppointment }) => {
+        setAppointment(updatedAppointment);
+        if (updatedAppointment.status === "cancelled") {
+          setDate("");
+          setTime("");
+          setMessage("Tu cita fue cancelada. Pulsa Reagendar cita para seleccionar un nuevo turno.");
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [requestId]);
+
+  useEffect(() => {
     if (!date || !isAvailableInstallationDate(date)) {
       return;
     }
@@ -123,6 +146,12 @@ function AppointmentScheduler({ requestId }) {
           {expanded ? "Cerrar calendario" : appointment?.status === "cancelled" ? "Reagendar cita" : appointment ? "Ver o cambiar cita" : "Agendar instalación"}
         </button>
       </div>
+      {appointment?.status === "cancelled" && !expanded && (
+        <div className="appointment-cancelled-action" role="status">
+          <div><b>Cita cancelada</b><span>Puedes elegir una nueva fecha y hora.</span></div>
+          <button type="button" onClick={() => setExpanded(true)}>Reagendar cita</button>
+        </div>
+      )}
       {expanded && <>
       {appointment && appointment.status !== "cancelled" && <div className={`appointment-current ${appointment.status}`}>
         <div><small>Cita actual</small><b>{new Intl.DateTimeFormat("es-EC", { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${appointment.appointment_date}T12:00:00Z`))}</b><span>{appointment.appointment_time.slice(0,5)} · {appointment.status === "confirmed" ? "Confirmada" : "Por confirmar"}</span></div>

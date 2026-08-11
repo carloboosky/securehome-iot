@@ -230,6 +230,17 @@ function ClientDashboard() {
             </span>
           </section>
 
+          {solicitud.status === "cancelled" && (
+            <section className="cancelled-installation-action" role="status">
+              <span className="empty-request-icon"><House aria-hidden="true"/></span>
+              <div>
+                <h2>Tu instalación fue cancelada</h2>
+                <p>La solicitud anterior se conservará como historial. Puedes iniciar una nueva instalación ahora.</p>
+              </div>
+              <button type="button" className="primary-button" onClick={() => navigate("/completar-registro")}>Volver a solicitar instalación</button>
+            </section>
+          )}
+
           <section className="dashboard-grid">
             <article className="dashboard-card">
               <span className="dashboard-icon"><ShieldCheck aria-hidden="true"/></span>

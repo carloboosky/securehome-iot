@@ -107,7 +107,7 @@ function HomePage() {
         </section>
 
         <section className="section plans" id="planes">
-          <div className="section-heading"><span className="eyebrow">Planes transparentes</span><h2>Elige la protección que necesitas</h2><p>Instalación profesional y acompañamiento incluidos.</p></div>
+          <div className="section-heading"><span className="eyebrow">Planes del prototipo</span><h2>Elige la protección que necesitas</h2><p>Valores referenciales del MVP, sujetos a validación técnica y comercial.</p></div>
           <div className="plan-grid">
             {plans.map(plan => <article className={`plan-card ${plan.featured ? "featured" : ""}`} key={plan.name}>
               {plan.featured && <span className="popular">Más elegido</span>}
@@ -117,7 +117,7 @@ function HomePage() {
               <Link className={`btn-link ${plan.featured ? "btn-primary" : "btn-outline"}`} to="/registro">Elegir plan</Link>
             </article>)}
           </div>
-          <p className="plans-terms-note">Todos los planes requieren una permanencia mínima de 4 meses. Consulta los <Link to="/terminos">términos y condiciones</Link>.</p>
+          <p className="plans-terms-note">Precios referenciales del MVP. Todos los planes requieren una permanencia mínima de 4 meses. Consulta los <Link to="/terminos">términos y condiciones</Link>.</p>
         </section>
 
         <section className="cta" id="contacto">

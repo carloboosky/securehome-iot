@@ -33,12 +33,12 @@ function ServiceRequestPage() {
 
       const [{ data: request }, { data: profile }, { data: planData, error }] =
         await Promise.all([
-          supabase.from("service_requests").select("id").eq("client_id", currentUser.id).limit(1).maybeSingle(),
+          supabase.from("service_requests").select("id,status").eq("client_id", currentUser.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
           supabase.from("profiles").select("phone").eq("id", currentUser.id).maybeSingle(),
           supabase.from("service_plans").select("id,name").order("id"),
         ]);
 
-      if (request) {
+      if (request && request.status !== "cancelled") {
         navigate("/dashboard", { replace: true });
         return;
       }

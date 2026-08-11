@@ -3,33 +3,43 @@ import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
+const formularioInicial = {
+  nombre: "",
+  telefono: "",
+  correo: "",
+  password: "",
+  confirmarPassword: "",
+  planId: "",
+  tipoPropiedad: "house",
+  direccion: "",
+  cantidadMascotas: "0",
+  tamanoMascotas: "none",
+  integrantesHogar: "1",
+  menoresTrece: "0",
+  notas: "",
+  aceptaTerminos: false,
+};
+
 function RegisterPage() {
   const navigate = useNavigate();
 
   const [planes, setPlanes] = useState([]);
 
-  const [formulario, setFormulario] = useState({
-    nombre: "",
-    telefono: "",
-    correo: "",
-    password: "",
-    confirmarPassword: "",
-    planId: "",
-    tipoPropiedad: "house",
-    direccion: "",
-    cantidadMascotas: "0",
-    tamanoMascotas: "none",
-    integrantesHogar: "1",
-    menoresTrece: "0",
-    notas: "",
-    aceptaTerminos: false,
-  });
+  const [formulario, setFormulario] = useState(formularioInicial);
 
   const [errores, setErrores] = useState({});
   const [mensajeGeneral, setMensajeGeneral] = useState("");
   const [cargando, setCargando] = useState(false);
   const [mostrarPassword, setMostrarPassword] = useState(false);
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
+
+  function limpiarFormulario() {
+    setFormulario({ ...formularioInicial });
+    setErrores({});
+    setMensajeGeneral("");
+    setMostrarPassword(false);
+    setMostrarConfirmacion(false);
+  }
 
   function validarCampo(name, datos) {
     const valor = datos[name];
@@ -353,13 +363,19 @@ function RegisterPage() {
     }
 
     if (!data.session) {
-      setMensajeGeneral("Cuenta creada. Revisa tu correo y abre el enlace de confirmación; después podrás iniciar sesión.");
-      setCargando(false);
+      limpiarFormulario();
+      navigate("/login", {
+        replace: true,
+        state: {
+          mensaje: "Cuenta creada. Revisa tu correo y abre el enlace de confirmación; después inicia sesión.",
+        },
+      });
       return;
     }
 
     try {
       await crearSolicitud(usuario);
+      limpiarFormulario();
       navigate("/disena-tu-sistema", { replace: true });
     } catch (solicitudError) {
       setMensajeGeneral(solicitudError.message);
