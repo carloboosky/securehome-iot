@@ -38,7 +38,10 @@ function AuthProvider({ children }) {
     supabase.auth.getSession().then(({ data }) => resolveSession(data.session));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setLoading(true);
-      resolveSession(nextSession);
+      // Supabase recomienda no esperar otras operaciones del cliente dentro
+      // de este callback. Se difiere la consulta del perfil para no bloquear
+      // el intercambio del codigo OAuth.
+      setTimeout(() => resolveSession(nextSession), 0);
     });
 
     return () => {

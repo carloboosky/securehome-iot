@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
 function AuthCallbackPage() {
   const navigate = useNavigate();
+  const redireccionando = useRef(false);
   const [mensaje, setMensaje] = useState(
     "Completando inicio de sesión con Google..."
   );
@@ -12,6 +13,9 @@ function AuthCallbackPage() {
     let activo = true;
 
     async function redirigirUsuario(usuario) {
+      if (redireccionando.current) return;
+      redireccionando.current = true;
+
       const { data: perfil, error: perfilError } = await supabase
         .from("profiles")
         .select("role")
@@ -19,6 +23,7 @@ function AuthCallbackPage() {
         .maybeSingle();
 
       if (perfilError) {
+        redireccionando.current = false;
         console.error("Error consultando perfil:", perfilError);
         setMensaje(
           `No se pudo consultar el perfil: ${perfilError.message}`
@@ -39,6 +44,7 @@ function AuthCallbackPage() {
           });
 
         if (crearPerfilError) {
+          redireccionando.current = false;
           console.error(
             "Error creando perfil:",
             crearPerfilError
@@ -56,21 +62,7 @@ function AuthCallbackPage() {
       if (perfil?.role === "admin") {
         navigate("/admin", { replace: true });
       } else {
-        const { data: solicitud, error: solicitudError } = await supabase
-          .from("service_requests")
-          .select("id")
-          .eq("client_id", usuario.id)
-          .limit(1)
-          .maybeSingle();
-
-        if (solicitudError) {
-          setMensaje(`No se pudo consultar tu solicitud: ${solicitudError.message}`);
-          return;
-        }
-
-        navigate(solicitud ? "/dashboard" : "/completar-registro", {
-          replace: true,
-        });
+        navigate("/dashboard", { replace: true });
       }
     }
 
@@ -124,13 +116,15 @@ function AuthCallbackPage() {
         const {
           data: { subscription },
         } = supabase.auth.onAuthStateChange(
-          async (evento, session) => {
+          (evento, session) => {
             if (
               session?.user &&
               (evento === "SIGNED_IN" ||
                 evento === "INITIAL_SESSION")
             ) {
-              await redirigirUsuario(session.user);
+              // Evita ejecutar consultas del cliente Supabase dentro del
+              // callback de auth, pues puede bloquear el flujo OAuth.
+              setTimeout(() => redirigirUsuario(session.user), 0);
             }
           }
         );

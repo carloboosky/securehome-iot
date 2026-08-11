@@ -45,8 +45,10 @@ function AppointmentScheduler({ requestId }) {
         }
         if (data) {
           setAppointment(data);
-          setDate(data.appointment_date);
-          setTime(data.appointment_time.slice(0, 5));
+          if (data.status !== "cancelled") {
+            setDate(data.appointment_date);
+            setTime(data.appointment_time.slice(0, 5));
+          }
         }
       });
   }, [requestId]);
@@ -104,7 +106,9 @@ function AppointmentScheduler({ requestId }) {
     if (error) setMessage(`No se pudo cancelar: ${error.message}`);
     else {
       setAppointment(previous => ({ ...previous, status: "cancelled" }));
-      setMessage("La cita fue cancelada. Puedes seleccionar un nuevo turno.");
+      setDate("");
+      setTime("");
+      setMessage("La cita fue cancelada. Ya puedes seleccionar una nueva fecha y hora.");
     }
     setSaving(false);
   }
@@ -116,13 +120,16 @@ function AppointmentScheduler({ requestId }) {
         <span>📅</span><div><span className="form-step">Instalación</span><h2>Agenda tu visita técnica</h2><p>Atendemos de lunes a viernes, excepto feriados nacionales.</p></div>
         </div>
         <button type="button" className="appointment-open" onClick={() => setExpanded(value => !value)}>
-          {expanded ? "Cerrar calendario" : appointment && appointment.status !== "cancelled" ? "Ver o cambiar cita" : "Agendar instalación"}
+          {expanded ? "Cerrar calendario" : appointment?.status === "cancelled" ? "Reagendar cita" : appointment ? "Ver o cambiar cita" : "Agendar instalación"}
         </button>
       </div>
       {expanded && <>
       {appointment && appointment.status !== "cancelled" && <div className={`appointment-current ${appointment.status}`}>
         <div><small>Cita actual</small><b>{new Intl.DateTimeFormat("es-EC", { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${appointment.appointment_date}T12:00:00Z`))}</b><span>{appointment.appointment_time.slice(0,5)} · {appointment.status === "confirmed" ? "Confirmada" : "Por confirmar"}</span></div>
         <button type="button" onClick={cancel} disabled={saving}>Cancelar cita</button>
+      </div>}
+      {appointment?.status === "cancelled" && <div className="appointment-current cancelled" role="status">
+        <div><small>Cita cancelada</small><b>Selecciona un nuevo turno</b><span>Elige otra fecha y hora disponibles para reagendar.</span></div>
       </div>}
       <div className="visual-calendar">
         <span>Selecciona una fecha disponible</span>
@@ -160,7 +167,7 @@ function AppointmentScheduler({ requestId }) {
       </div>
       <p className="appointment-hours">Mañana: 09:00–12:00 · Tarde: 14:00–17:00 · Reserva con mínimo 2 horas de anticipación.</p>
       {message && <p className="appointment-message" role="status">{message}</p>}
-      <button type="button" className="appointment-save" disabled={saving || !date || !time} onClick={save}>{saving ? "Guardando..." : appointment && appointment.status !== "cancelled" ? "Reprogramar cita" : "Solicitar cita"}</button>
+      <button type="button" className="appointment-save" disabled={saving || !date || !time} onClick={save}>{saving ? "Guardando..." : appointment?.status === "cancelled" ? "Reagendar cita" : appointment ? "Reprogramar cita" : "Solicitar cita"}</button>
       </>}
     </section>
   );
