@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS public.residents (
   request_id uuid NOT NULL REFERENCES public.service_requests(id) ON DELETE CASCADE,
   client_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   full_name text NOT NULL CHECK (char_length(trim(full_name)) BETWEEN 2 AND 80),
-  role text NOT NULL DEFAULT 'Familiar' CHECK (char_length(trim(role)) BETWEEN 2 AND 40),
+  role text NOT NULL DEFAULT 'Familiar' CHECK (role IN ('Familiar', 'Amigo', 'Cuidador', 'Personal doméstico')),
   is_at_home boolean NOT NULL DEFAULT true,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
@@ -22,6 +22,16 @@ CREATE TABLE IF NOT EXISTS public.pets (
 
 CREATE INDEX IF NOT EXISTS residents_request_id_idx ON public.residents(request_id);
 CREATE INDEX IF NOT EXISTS pets_request_id_idx ON public.pets(request_id);
+
+-- Normaliza instalaciones anteriores y restringe también la base de datos,
+-- evitando que una llamada directa a la API guarde relaciones arbitrarias.
+ALTER TABLE public.residents DROP CONSTRAINT IF EXISTS residents_role_check;
+UPDATE public.residents
+SET role = 'Familiar'
+WHERE role NOT IN ('Familiar', 'Amigo', 'Cuidador', 'Personal doméstico');
+ALTER TABLE public.residents
+ADD CONSTRAINT residents_role_check
+CHECK (role IN ('Familiar', 'Amigo', 'Cuidador', 'Personal doméstico'));
 
 ALTER TABLE public.residents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pets ENABLE ROW LEVEL SECURITY;

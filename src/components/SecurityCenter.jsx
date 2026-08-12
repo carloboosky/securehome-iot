@@ -6,6 +6,7 @@ import { getSecureCameraStreamUrl } from "../lib/secureCamera";
 
 const ALERTS_URL = "https://iot-security.pro/api/alerts";
 const TELEGRAM_LINK_URL = `${ALERTS_URL}/telegram/add`;
+const residentRoles = ["Familiar", "Amigo", "Cuidador", "Personal doméstico"];
 const ALERT_COOLDOWN_MS = 15_000;
 const STREAM_TOKEN_REFRESH_MS = 9 * 60 * 1000;
 const DETECTION_INTERVAL_MS = 500;
@@ -481,13 +482,17 @@ function SecurityCenter({ requestId }) {
       setHouseholdMessage("Escribe un nombre válido para el residente.");
       return;
     }
+    if (!residentRoles.includes(residentRole)) {
+      setHouseholdMessage("Selecciona una relación válida.");
+      return;
+    }
     setHouseholdMessage("");
     const { data: { user } } = await supabase.auth.getUser();
     const { data, error } = await supabase.from("residents").insert({
       request_id: requestId,
       client_id: user.id,
       full_name: cleanName,
-      role: residentRole.trim() || "Familiar",
+      role: residentRole,
       is_at_home: true,
     }).select("id,full_name,role,is_at_home").single();
     if (error) {
@@ -623,7 +628,9 @@ function SecurityCenter({ requestId }) {
           <div className="household-card-heading"><span className="control-icon"><Users aria-hidden="true"/></span><div><h3>Gestión de residentes</h3><p>El modo de seguridad cambia según quién esté en casa.</p></div></div>
           <form className="household-add-form resident-add-form" onSubmit={addResident}>
             <input maxLength={80} placeholder="Nombre completo" value={residentName} onChange={event => setResidentName(event.target.value)} aria-label="Nombre del residente"/>
-            <input maxLength={40} placeholder="Rol: familiar, cuidador…" value={residentRole} onChange={event => setResidentRole(event.target.value)} aria-label="Rol del residente"/>
+            <select value={residentRole} onChange={event => setResidentRole(event.target.value)} aria-label="Relación con el residente">
+              {residentRoles.map(role => <option value={role} key={role}>{role}</option>)}
+            </select>
             <button type="submit">＋ Agregar</button>
           </form>
           {householdLoading ? <p className="empty-residents">Cargando residentes…</p> : residents.length ? <ul className="household-list">

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
+import AppointmentScheduler from "./AppointmentScheduler";
 
 function RequestChat({ requestId, role }) {
   const [messages, setMessages] = useState([]);
@@ -8,6 +9,7 @@ function RequestChat({ requestId, role }) {
   const [sending, setSending] = useState(false);
   const [file, setFile] = useState(null);
   const [error, setError] = useState("");
+  const [showAppointment, setShowAppointment] = useState(false);
   const messagesRef = useRef(null);
 
   useEffect(() => {
@@ -125,9 +127,15 @@ function RequestChat({ requestId, role }) {
     <div className="request-chat">
       <div className="chat-header">
         <div><span>💬</span><div><h3>Chat de soporte</h3><p>Conversación entre cliente y administración</p></div></div>
-        <span className="chat-online"><i/> En línea</span>
+        <div className="chat-header-actions">
+          {role === "client" && <button type="button" className="chat-appointment-button" aria-pressed={showAppointment} onClick={() => setShowAppointment(value => !value)}>{showAppointment ? "Volver al chat" : "📅 Agendar visita"}</button>}
+          <span className="chat-online"><i/> En línea</span>
+        </div>
       </div>
-      <div className="chat-messages" aria-live="polite" ref={messagesRef}>
+      {showAppointment && role === "client" ? <div className="chat-appointment-panel">
+        <div className="chat-assistant-message"><span>🤖</span><div><b>Asistente de instalación</b><p>Selecciona una fecha y una hora disponibles. También puedes reagendar si tu cita fue cancelada.</p></div></div>
+        <AppointmentScheduler requestId={requestId} embedded defaultExpanded />
+      </div> : <div className="chat-messages" aria-live="polite" ref={messagesRef}>
         {loading ? <p className="chat-empty">Cargando conversación...</p> :
           messages.length === 0 ? <div className="chat-empty"><span>👋</span><b>Inicia la conversación</b><p>Escribe un mensaje sobre la instalación o el sistema.</p></div> :
           messages.map(item => {
@@ -138,9 +146,9 @@ function RequestChat({ requestId, role }) {
               {item.message && <p>{item.message}</p>}<time>{messageTime(item.created_at)}</time>
             </div>;
           })}
-      </div>
+      </div>}
       {error && <p className="chat-error">{error}</p>}
-      <form className="chat-form" onSubmit={send}>
+      {!showAppointment && <form className="chat-form" onSubmit={send}>
         <label className="chat-photo-button" title="Enviar fotografía">📷<input type="file" accept="image/*" onChange={event => setFile(event.target.files?.[0] || null)}/></label>
         <textarea aria-label="Escribe un mensaje" maxLength={1000} placeholder={file ? `Foto seleccionada: ${file.name}` : "Escribe tu mensaje..."} value={text} onChange={event => setText(event.target.value)} onKeyDown={event => {
           if (event.key === "Enter" && !event.shiftKey) {
@@ -149,7 +157,7 @@ function RequestChat({ requestId, role }) {
           }
         }}/>
         <button type="submit" disabled={sending || (!text.trim() && !file)}>{sending ? "Enviando..." : "Enviar ➤"}</button>
-      </form>
+      </form>}
     </div>
   );
 }

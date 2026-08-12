@@ -10,14 +10,14 @@ function isTooSoon(date, time) {
   return new Date(`${date}T${time}:00`).getTime() < Date.now() + MINIMUM_NOTICE_MS;
 }
 
-function AppointmentScheduler({ requestId }) {
+function AppointmentScheduler({ requestId, embedded = false, defaultExpanded = false }) {
   const [appointment, setAppointment] = useState(null);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [occupied, setOccupied] = useState([]);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const availableDates = useMemo(() => {
     const dates = [];
     const cursor = new Date();
@@ -57,16 +57,32 @@ function AppointmentScheduler({ requestId }) {
     const channel = supabase
       .channel(`client-appointment-${requestId}`)
       .on("postgres_changes", {
-        event: "UPDATE",
+        event: "*",
         schema: "public",
         table: "installation_appointments",
         filter: `request_id=eq.${requestId}`,
-      }, ({ new: updatedAppointment }) => {
+      }, ({ eventType, new: updatedAppointment }) => {
+        if (eventType === "DELETE" || !updatedAppointment?.id) {
+          setAppointment(null);
+          setDate("");
+          setTime("");
+          setMessage("La cita fue eliminada. Puedes solicitar un nuevo turno.");
+          return;
+        }
         setAppointment(updatedAppointment);
         if (updatedAppointment.status === "cancelled") {
           setDate("");
           setTime("");
           setMessage("Tu cita fue cancelada. Pulsa Reagendar cita para seleccionar un nuevo turno.");
+        } else {
+          setDate(updatedAppointment.appointment_date);
+          setTime(updatedAppointment.appointment_time.slice(0, 5));
+          const statusMessages = {
+            pending: "Tu cita está pendiente de confirmación.",
+            confirmed: "Tu cita fue confirmada por administración.",
+            completed: "La visita de instalación fue marcada como completada.",
+          };
+          setMessage(statusMessages[updatedAppointment.status] || "Tu cita fue actualizada.");
         }
       })
       .subscribe();
@@ -137,14 +153,14 @@ function AppointmentScheduler({ requestId }) {
   }
 
   return (
-    <section className={`appointment-card compact ${expanded ? "expanded" : ""}`}>
+    <section className={`appointment-card compact ${embedded ? "appointment-embedded" : ""} ${expanded ? "expanded" : ""}`}>
       <div className="appointment-compact-header">
         <div className="appointment-heading">
         <span>📅</span><div><span className="form-step">Instalación</span><h2>Agenda tu visita técnica</h2><p>Atendemos de lunes a viernes, excepto feriados nacionales.</p></div>
         </div>
-        <button type="button" className="appointment-open" onClick={() => setExpanded(value => !value)}>
+        {!embedded && <button type="button" className="appointment-open" onClick={() => setExpanded(value => !value)}>
           {expanded ? "Cerrar calendario" : appointment?.status === "cancelled" ? "Reagendar cita" : appointment ? "Ver o cambiar cita" : "Agendar instalación"}
-        </button>
+        </button>}
       </div>
       {appointment?.status === "cancelled" && !expanded && (
         <div className="appointment-cancelled-action" role="status">
@@ -152,6 +168,7 @@ function AppointmentScheduler({ requestId }) {
           <button type="button" onClick={() => setExpanded(true)}>Reagendar cita</button>
         </div>
       )}
+      {message && !expanded && appointment?.status !== "cancelled" && <p className="appointment-message appointment-live-message" role="status">🔔 {message}</p>}
       {expanded && <>
       {appointment && appointment.status !== "cancelled" && <div className={`appointment-current ${appointment.status}`}>
         <div><small>Cita actual</small><b>{new Intl.DateTimeFormat("es-EC", { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${appointment.appointment_date}T12:00:00Z`))}</b><span>{appointment.appointment_time.slice(0,5)} · {appointment.status === "confirmed" ? "Confirmada" : "Por confirmar"}</span></div>
