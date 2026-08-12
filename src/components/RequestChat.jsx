@@ -3,13 +3,33 @@ import { supabase } from "../lib/supabase";
 import AppointmentScheduler from "./AppointmentScheduler";
 
 const helpTopics = [
-  { id: "appointment", icon: "📅", title: "Agendar o reagendar una cita", answer: "Puedes seleccionar una fecha laborable y un horario disponible. La reserva requiere al menos 2 horas de anticipación.", action: "appointment" },
-  { id: "status", icon: "📋", title: "Estado de mi instalación", answer: "En tu panel puedes consultar si la solicitud está pendiente, contactada, programada, instalada o cancelada. Los cambios de administración aparecen automáticamente." },
-  { id: "plans", icon: "🛡️", title: "Planes y precios", answer: "SecureHome ofrece los planes Esencial, Protección Plus y Total. Los valores mostrados en la página son referenciales del prototipo y dependen de la validación técnica." },
-  { id: "term", icon: "🗓️", title: "Permanencia mínima", answer: "Los planes contemplan una permanencia mínima de 4 meses desde la activación del sistema." },
-  { id: "telegram", icon: "📲", title: "Configurar Telegram", answer: "Desde el Centro de seguridad puedes vincular el identificador del chat de Telegram para recibir fotografías y avisos de eventos." },
-  { id: "cameras", icon: "📹", title: "Cámaras y detección", answer: "La ESP32-CAM transmite el video. En el MVP, MediaPipe detecta personas desde el navegador y el backend gestiona el stream y las alertas." },
-  { id: "household", icon: "👥", title: "Residentes y mascotas", answer: "En Gestión del hogar puedes registrar residentes y mascotas. La presencia de residentes permite ajustar automáticamente el modo de seguridad." },
+  { id: "appointment", icon: "📅", title: "Citas de instalación", questions: [
+    { title: "Quiero agendar una cita", steps: ["Abre el calendario.", "Elige una fecha laborable.", "Selecciona un horario disponible.", "Pulsa Solicitar cita."], actions: [{ label: "Abrir calendario", type: "appointment" }] },
+    { title: "Mi cita fue cancelada", steps: ["Abre el calendario de instalación.", "Escoge una nueva fecha y hora.", "Pulsa Reagendar cita."], actions: [{ label: "Reagendar ahora", type: "appointment" }] },
+    { title: "No encuentro horarios", steps: ["Prueba otra fecha de lunes a viernes.", "Recuerda reservar con 2 horas de anticipación.", "Si no aparece ningún turno, solicita ayuda a administración."], actions: [{ label: "Contactar administración", type: "admin", message: "Hola, no encuentro horarios disponibles para mi instalación." }] },
+  ] },
+  { id: "status", icon: "📋", title: "Estado de mi solicitud", questions: [
+    { title: "¿Qué significa mi estado?", steps: ["Pendiente: recibimos tu solicitud.", "Contactado: administración se comunicó contigo.", "Programado: existe una visita coordinada.", "Instalado: el sistema ya fue habilitado.", "Cancelado: puedes registrar una nueva solicitud."], actions: [{ label: "Preguntar por mi caso", type: "admin", message: "Hola, quisiera información sobre el estado de mi solicitud." }] },
+    { title: "Mi estado no cambia", steps: ["Los cambios deben aparecer automáticamente.", "Comprueba que el indicador diga En tiempo real.", "Si continúa igual, informa a administración."], actions: [{ label: "Reportar problema", type: "admin", message: "Hola, el estado de mi solicitud no se está actualizando." }] },
+  ] },
+  { id: "plans", icon: "🛡️", title: "Planes y precios", questions: [
+    { title: "Comparar los planes", steps: ["Esencial: protección para espacios pequeños.", "Protección Plus: más cámaras y sensor de movimiento.", "Total: sensores y control mediante NFC.", "Los valores del MVP son referenciales."], actions: [{ label: "Ver planes", type: "link", href: "/#planes" }, { label: "Pedir asesoría", type: "admin", message: "Hola, necesito ayuda para elegir un plan." }] },
+  ] },
+  { id: "term", icon: "🗓️", title: "Permanencia y contrato", questions: [
+    { title: "¿Cuánto dura la permanencia?", steps: ["La permanencia mínima es de 4 meses.", "Se cuenta desde la activación del sistema.", "Una cancelación anticipada está sujeta a los términos aceptados."], actions: [{ label: "Leer términos", type: "link", href: "/terminos" }] },
+  ] },
+  { id: "telegram", icon: "📲", title: "Alertas por Telegram", questions: [
+    { title: "Quiero vincular Telegram", steps: ["Abre el Centro de seguridad.", "Busca Vincular celular con Telegram.", "Ingresa el identificador de chat.", "Guarda y espera el mensaje de confirmación."], actions: [{ label: "Necesito ayuda", type: "admin", message: "Hola, necesito ayuda para vincular Telegram." }] },
+    { title: "No recibo alertas", steps: ["Comprueba que Telegram esté vinculado.", "Verifica que el sistema esté activado.", "Confirma que la cámara esté en línea.", "Si persiste, solicita revisión técnica."], actions: [{ label: "Solicitar revisión", type: "admin", message: "Hola, no estoy recibiendo alertas de Telegram." }] },
+  ] },
+  { id: "cameras", icon: "📹", title: "Cámaras y detección", questions: [
+    { title: "No puedo ver la cámara", steps: ["Comprueba tu conexión a internet.", "Espera el reintento automático del stream.", "Verifica que administración haya asignado una cámara.", "Solicita soporte si continúa sin imagen."], actions: [{ label: "Solicitar soporte", type: "admin", message: "Hola, no puedo visualizar la cámara en mi panel." }] },
+    { title: "¿Cómo detecta personas?", steps: ["La ESP32-CAM transmite el video.", "MediaPipe analiza los fotogramas en el navegador.", "Cuando detecta una persona, el backend gestiona la alerta."], actions: [] },
+  ] },
+  { id: "household", icon: "👥", title: "Residentes y mascotas", questions: [
+    { title: "Agregar un residente", steps: ["Abre Gestión de residentes.", "Escribe el nombre.", "Selecciona Familiar, Amigo, Cuidador o Personal doméstico.", "Pulsa Agregar."], actions: [] },
+    { title: "¿Cómo cambia el modo de seguridad?", steps: ["Marca quién está En casa o Ausente.", "Si todos están ausentes, el sistema se activa.", "Si alguien está en casa, se desactiva automáticamente."], actions: [] },
+  ] },
 ];
 
 function RequestChat({ requestId, role }) {
@@ -22,6 +42,8 @@ function RequestChat({ requestId, role }) {
   const [showAppointment, setShowAppointment] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [selectedHelpTopic, setSelectedHelpTopic] = useState(null);
+  const [selectedHelpAnswer, setSelectedHelpAnswer] = useState(null);
+  const [realtimeStatus, setRealtimeStatus] = useState("connecting");
   const messagesRef = useRef(null);
 
   useEffect(() => {
@@ -62,7 +84,14 @@ function RequestChat({ requestId, role }) {
         );
       })
       .subscribe(status => {
-        if (status === "SUBSCRIBED") loadMessages();
+        if (status === "SUBSCRIBED") {
+          setRealtimeStatus("connected");
+          loadMessages();
+        } else if (["CHANNEL_ERROR", "TIMED_OUT", "CLOSED"].includes(status)) {
+          setRealtimeStatus("fallback");
+        } else {
+          setRealtimeStatus("connecting");
+        }
       });
 
     loadMessages({ initial: true });
@@ -154,13 +183,36 @@ function RequestChat({ requestId, role }) {
     }).format(new Date(date));
   }
 
+  function runHelpAction(action) {
+    if (action.type === "appointment") {
+      setShowHelp(false);
+      setSelectedHelpTopic(null);
+      setSelectedHelpAnswer(null);
+      setShowAppointment(true);
+      return;
+    }
+    if (action.type === "admin") {
+      setText(action.message);
+      setShowHelp(false);
+      setSelectedHelpTopic(null);
+      setSelectedHelpAnswer(null);
+      return;
+    }
+    if (action.type === "link") window.location.assign(action.href);
+  }
+
+  function resetHelp() {
+    setSelectedHelpTopic(null);
+    setSelectedHelpAnswer(null);
+  }
+
   return (
     <div className="request-chat">
       <div className="chat-header">
         <div><span>💬</span><div><h3>Chat de soporte</h3><p>Conversación entre cliente y administración</p></div></div>
         <div className="chat-header-actions">
           {role === "client" && !showAppointment && !showHelp && <><button type="button" className="chat-help-button" onClick={() => setShowHelp(true)}>🤖 Ayuda rápida</button><button type="button" className="chat-appointment-button" onClick={() => setShowAppointment(true)}>📅 Agendar visita</button></>}
-          <span className="chat-online"><i/> En línea</span>
+          <span className={`chat-online ${realtimeStatus}`} title={realtimeStatus === "fallback" ? "Sincronización automática cada 3 segundos" : "Conexión en tiempo real"}><i/> {realtimeStatus === "connected" ? "En tiempo real" : realtimeStatus === "fallback" ? "Sincronizando" : "Conectando"}</span>
         </div>
       </div>
       {showAppointment && role === "client" ? <div className="chat-appointment-panel">
@@ -169,13 +221,18 @@ function RequestChat({ requestId, role }) {
         <button type="button" className="chat-return-button" onClick={() => setShowAppointment(false)}>← Volver al chat</button>
       </div> : showHelp && role === "client" ? <div className="chat-help-panel">
         <div className="chat-assistant-message"><span>🤖</span><div><b>Asistente SecureHome</b><p>Selecciona el tema sobre el que necesitas ayuda. Este asistente es gratuito y utiliza respuestas verificadas.</p></div></div>
-        {!selectedHelpTopic ? <div className="chat-help-topics">{helpTopics.map(topic => <button type="button" key={topic.id} onClick={() => setSelectedHelpTopic(topic)}><span>{topic.icon}</span><b>{topic.title}</b><i>›</i></button>)}</div> : <div className="chat-help-answer">
-          <span>{selectedHelpTopic.icon}</span><h3>{selectedHelpTopic.title}</h3><p>{selectedHelpTopic.answer}</p>
-          {selectedHelpTopic.action === "appointment" && <button type="button" className="chat-help-primary" onClick={() => { setShowHelp(false); setSelectedHelpTopic(null); setShowAppointment(true); }}>Abrir calendario</button>}
-          <button type="button" onClick={() => setSelectedHelpTopic(null)}>← Consultar otro tema</button>
+        {!selectedHelpTopic ? <div className="chat-help-topics">{helpTopics.map(topic => <button type="button" key={topic.id} onClick={() => setSelectedHelpTopic(topic)}><span>{topic.icon}</span><b>{topic.title}</b><i>›</i></button>)}</div> : !selectedHelpAnswer ? <div className="chat-help-questions">
+          <div className="chat-help-breadcrumb"><button type="button" onClick={resetHelp}>← Temas</button><span>{selectedHelpTopic.icon} {selectedHelpTopic.title}</span></div>
+          <p>¿Qué necesitas resolver?</p>
+          {selectedHelpTopic.questions.map(question => <button type="button" key={question.title} onClick={() => setSelectedHelpAnswer(question)}><span>?</span><b>{question.title}</b><i>›</i></button>)}
+        </div> : <div className="chat-help-answer">
+          <div className="chat-bot-bubble"><span>🤖</span><div><small>Asistente SecureHome</small><h3>{selectedHelpAnswer.title}</h3></div></div>
+          <ol>{selectedHelpAnswer.steps.map(step => <li key={step}>{step}</li>)}</ol>
+          {selectedHelpAnswer.actions.length > 0 && <div className="chat-help-actions">{selectedHelpAnswer.actions.map(action => <button type="button" className={action.type === "appointment" ? "chat-help-primary" : ""} onClick={() => runHelpAction(action)} key={action.label}>{action.label}</button>)}</div>}
+          <div className="chat-help-feedback"><span>¿Te ayudó esta respuesta?</span><button type="button" onClick={() => setSelectedHelpAnswer(null)}>Sí, otra pregunta</button><button type="button" onClick={() => runHelpAction({ type: "admin", message: `Hola, necesito más ayuda con: ${selectedHelpAnswer.title}.` })}>No, hablar con alguien</button></div>
         </div>}
-        <div className="chat-help-footer"><p>¿No encontraste la respuesta?</p><button type="button" onClick={() => { setShowHelp(false); setSelectedHelpTopic(null); setText("Hola, necesito ayuda con "); }}>Hablar con administración</button></div>
-        <button type="button" className="chat-return-button" onClick={() => { setShowHelp(false); setSelectedHelpTopic(null); }}>← Volver al chat</button>
+        {!selectedHelpAnswer && <div className="chat-help-footer"><p>¿No encuentras tu pregunta?</p><button type="button" onClick={() => runHelpAction({ type: "admin", message: "Hola, necesito ayuda con mi sistema SecureHome." })}>Hablar con administración</button></div>}
+        <button type="button" className="chat-return-button" onClick={() => { setShowHelp(false); resetHelp(); }}>← Volver al chat</button>
       </div> : <div className="chat-messages" aria-live="polite" ref={messagesRef}>
         {loading ? <p className="chat-empty">Cargando conversación...</p> :
           messages.length === 0 ? <div className="chat-empty"><span>👋</span><b>Inicia la conversación</b><p>Escribe un mensaje sobre la instalación o el sistema.</p></div> :

@@ -3,11 +3,7 @@
     "securehome-iot": {
       "command": "npm",
       "args": ["run", "mcp"],
-      "cwd": "/RUTA/ABSOLUTA/securehome-iot",
-      "env": {
-        "MCP_SUPABASE_URL": "https://TU_PROYECTO.supabase.co",
-        "MCP_SUPABASE_SERVICE_ROLE_KEY": "TU_SERVICE_ROLE_KEY"
-      }
+      "cwd": "/RUTA/ABSOLUTA/securehome-iot"
     }
   }
 }

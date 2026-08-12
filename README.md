@@ -64,15 +64,30 @@ Consulta el procedimiento de despliegue y rollback en el
 
 El proyecto incluye un servidor MCP oficial de solo lectura en `mcp/server.js`. Expone las herramientas `list-clients`, `get-security-overview`, `list-cameras` y `get-household` para que un cliente de IA consulte el sistema sin poder desbloquear puertas, desactivar alarmas ni modificar datos.
 
-Antes de probar las herramientas, ejecuta `supabase_mcp_readonly_setup.sql` en Supabase SQL Editor. La migración concede al rol `service_role` solamente acceso `SELECT` sobre las tablas consultadas.
+Antes de probar las herramientas, ejecuta `supabase_mcp_readonly_setup.sql` en Supabase SQL Editor. El servidor expone únicamente herramientas de consulta, pero `service_role` continúa siendo una credencial privilegiada de Supabase: debe tratarse como un secreto crítico y utilizarse solamente en un entorno local controlado.
 
 Primero copia `.env.mcp.example` como `.env.mcp`, completa sus dos variables y ejecuta:
 
 ```bash
+cp .env.mcp.example .env.mcp
+nano .env.mcp
 npm run mcp
 ```
 
-Puedes adaptar `mcp/mcp-config.example.json` para registrar el servidor en un host compatible. La clave `MCP_SUPABASE_SERVICE_ROLE_KEY` es secreta: nunca debe incluirse en Git, Vercel ni en el frontend.
+`npm run mcp` inicia un servidor por entrada/salida estándar: no abre una página ni un puerto. Al ejecutarlo manualmente quedará esperando a que un cliente MCP envíe el protocolo. Para usar sus herramientas, copia `mcp/mcp-config.example.json` en la configuración del cliente compatible y reemplaza `cwd` por la ruta absoluta del repositorio.
+
+La clave se lee desde `.env.mcp`; no debe repetirse dentro del JSON de configuración. `MCP_SUPABASE_SERVICE_ROLE_KEY` es secreta: nunca debe incluirse en Git, Vercel, capturas ni en el frontend.
+
+Comprobaciones útiles:
+
+```bash
+npm install
+npm run lint
+npm test
+npm run mcp
+```
+
+Si aparece `Configura MCP_SUPABASE_URL...`, revisa `.env.mcp`. Si el proceso queda abierto mostrando `esperando un cliente mediante stdio`, el arranque es correcto; se detiene con `Ctrl+C`.
 
 ## Base de datos
 

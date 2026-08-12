@@ -114,5 +114,9 @@ function createServer() {
   return server;
 }
 
-void serveStdio(createServer);
-console.error("SecureHome MCP está activo mediante stdio.");
+serveStdio(createServer, {
+  onerror(error) {
+    console.error(`Error del transporte MCP: ${error.message}`);
+  },
+});
+console.error("SecureHome MCP está esperando un cliente mediante stdio.");
