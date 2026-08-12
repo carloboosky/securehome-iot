@@ -188,7 +188,7 @@ function ClientDashboard() {
           <button type="button" aria-label="Cerrar notificación" onClick={() => setActualizacion("")}>×</button>
         </div>
       )}
-      {solicitud && <MessageNotifications role="client" requestId={solicitud.id} chatOpen={chatAbierto} onOpen={() => setChatAbierto(true)} />}
+      {solicitud && <MessageNotifications role="client" onOpen={() => setChatAbierto(true)} />}
 
       {!solicitud ? (
         <section className="empty-request">

@@ -1,40 +1,24 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-function MessageNotifications({ role, requestId, chatOpen, onOpen, showBubble = true }) {
+function MessageNotifications({ role, onOpen, showBubble = true }) {
   const [pending, setPending] = useState([]);
   const [latest, setLatest] = useState(null);
-  const chatOpenRef = useRef(chatOpen);
-
-  useEffect(() => {
-    chatOpenRef.current = chatOpen;
-  }, [chatOpen]);
 
   useEffect(() => {
     let active = true;
-    let query = supabase.from("service_messages")
+    supabase.from("service_messages")
       .select("id,request_id,sender_role,message,image_path,created_at")
       .neq("sender_role", role)
       .is("read_at", null)
-      .order("created_at", { ascending: false });
-
-    if (requestId) {
-      query = query.eq("request_id", requestId);
-    }
-
-    query.then(({ data }) => {
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
         if (active) setPending(data || []);
       });
 
-    const channelName = requestId ? `message-alerts-${requestId}` : `message-alerts-${role}`;
-    const filter = requestId ? `request_id=eq.${requestId}` : undefined;
-
-    const channel = supabase.channel(channelName)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "service_messages", filter }, payload => {
+    const channel = supabase.channel(`message-alerts-${role}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "service_messages" }, payload => {
         if (payload.new.sender_role === role) return;
-        
-        if (chatOpenRef.current && (!requestId || requestId === payload.new.request_id)) return;
-
         setPending(items => items.some(item => item.id === payload.new.id) ? items : [payload.new, ...items]);
         setLatest(payload.new);
         if ("Notification" in window && Notification.permission === "granted") {
@@ -48,7 +32,7 @@ function MessageNotifications({ role, requestId, chatOpen, onOpen, showBubble = 
       active = false;
       supabase.removeChannel(channel);
     };
-  }, [role, requestId]);
+  }, [role]);
 
   async function openConversation(requestId) {
     const ids = pending.filter(item => item.request_id === requestId).map(item => item.id);
