@@ -13,6 +13,11 @@ function AdminAppointments({ requests }) {
   const [appointments, setAppointments] = useState([]);
   const [error, setError] = useState("");
   const [expandedAppointmentId, setExpandedAppointmentId] = useState(null);
+  const [openGroups, setOpenGroups] = useState({ pending: true, confirmed: true, completed: false, cancelled: false });
+
+  function toggleGroup(group, open) {
+    setOpenGroups(previous => previous[group] === open ? previous : { ...previous, [group]: open });
+  }
 
   useEffect(() => {
     let active = true;
@@ -116,10 +121,10 @@ function AdminAppointments({ requests }) {
       <div className="events-heading"><h2>Agenda de instalaciones</h2><p>Confirma y organiza las próximas visitas técnicas.</p></div>
       {error && <p className="dashboard-message">{error}</p>}
       {!error && appointments.length === 0 ? <p className="empty-appointments">No hay citas solicitadas.</p> : <div className="appointment-groups">
-        <section className="appointment-group priority"><div className="appointment-group-title"><div><h3>Por confirmar</h3><p>Citas que requieren atención primero.</p></div><span>{pendingAppointments.length}</span></div>{pendingAppointments.length ? <div className="appointment-list">{pendingAppointments.map(renderAppointment)}</div> : <p className="empty-appointments">No hay citas pendientes.</p>}</section>
-        <section className="appointment-group"><div className="appointment-group-title"><div><h3>Confirmadas</h3><p>Próximas visitas programadas.</p></div><span>{confirmedAppointments.length}</span></div>{confirmedAppointments.length ? <div className="appointment-list">{confirmedAppointments.map(renderAppointment)}</div> : <p className="empty-appointments">No hay citas confirmadas.</p>}</section>
-        <details className="appointment-archive"><summary><span>Instalaciones completadas</span><b>{completedAppointments.length}</b></summary>{completedAppointments.length ? <div className="appointment-list">{completedAppointments.map(renderAppointment)}</div> : <p className="empty-appointments">No hay instalaciones completadas.</p>}</details>
-        <details className="appointment-archive cancelled"><summary><span>Citas canceladas</span><b>{cancelledAppointments.length}</b></summary>{cancelledAppointments.length ? <div className="appointment-list">{cancelledAppointments.map(renderAppointment)}</div> : <p className="empty-appointments">No hay citas canceladas.</p>}</details>
+        <details className="appointment-archive appointment-group priority" open={openGroups.pending} onToggle={event => toggleGroup("pending", event.currentTarget.open)}><summary><div><span>Por confirmar</span><small>Citas que requieren atención primero.</small></div><b>{pendingAppointments.length}</b></summary>{pendingAppointments.length ? <div className="appointment-list">{pendingAppointments.map(renderAppointment)}</div> : <p className="empty-appointments">No hay citas pendientes.</p>}</details>
+        <details className="appointment-archive appointment-group" open={openGroups.confirmed} onToggle={event => toggleGroup("confirmed", event.currentTarget.open)}><summary><div><span>Confirmadas</span><small>Próximas visitas programadas.</small></div><b>{confirmedAppointments.length}</b></summary>{confirmedAppointments.length ? <div className="appointment-list">{confirmedAppointments.map(renderAppointment)}</div> : <p className="empty-appointments">No hay citas confirmadas.</p>}</details>
+        <details className="appointment-archive" open={openGroups.completed} onToggle={event => toggleGroup("completed", event.currentTarget.open)}><summary><span>Instalaciones completadas</span><b>{completedAppointments.length}</b></summary>{completedAppointments.length ? <div className="appointment-list">{completedAppointments.map(renderAppointment)}</div> : <p className="empty-appointments">No hay instalaciones completadas.</p>}</details>
+        <details className="appointment-archive cancelled" open={openGroups.cancelled} onToggle={event => toggleGroup("cancelled", event.currentTarget.open)}><summary><span>Citas canceladas</span><b>{cancelledAppointments.length}</b></summary>{cancelledAppointments.length ? <div className="appointment-list">{cancelledAppointments.map(renderAppointment)}</div> : <p className="empty-appointments">No hay citas canceladas.</p>}</details>
       </div>}
     </section>
   );

@@ -2,6 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import AppointmentScheduler from "./AppointmentScheduler";
 
+const helpTopics = [
+  { id: "appointment", icon: "📅", title: "Agendar o reagendar una cita", answer: "Puedes seleccionar una fecha laborable y un horario disponible. La reserva requiere al menos 2 horas de anticipación.", action: "appointment" },
+  { id: "status", icon: "📋", title: "Estado de mi instalación", answer: "En tu panel puedes consultar si la solicitud está pendiente, contactada, programada, instalada o cancelada. Los cambios de administración aparecen automáticamente." },
+  { id: "plans", icon: "🛡️", title: "Planes y precios", answer: "SecureHome ofrece los planes Esencial, Protección Plus y Total. Los valores mostrados en la página son referenciales del prototipo y dependen de la validación técnica." },
+  { id: "term", icon: "🗓️", title: "Permanencia mínima", answer: "Los planes contemplan una permanencia mínima de 4 meses desde la activación del sistema." },
+  { id: "telegram", icon: "📲", title: "Configurar Telegram", answer: "Desde el Centro de seguridad puedes vincular el identificador del chat de Telegram para recibir fotografías y avisos de eventos." },
+  { id: "cameras", icon: "📹", title: "Cámaras y detección", answer: "La ESP32-CAM transmite el video. En el MVP, MediaPipe detecta personas desde el navegador y el backend gestiona el stream y las alertas." },
+  { id: "household", icon: "👥", title: "Residentes y mascotas", answer: "En Gestión del hogar puedes registrar residentes y mascotas. La presencia de residentes permite ajustar automáticamente el modo de seguridad." },
+];
+
 function RequestChat({ requestId, role }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
@@ -10,12 +20,14 @@ function RequestChat({ requestId, role }) {
   const [file, setFile] = useState(null);
   const [error, setError] = useState("");
   const [showAppointment, setShowAppointment] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+  const [selectedHelpTopic, setSelectedHelpTopic] = useState(null);
   const messagesRef = useRef(null);
 
   useEffect(() => {
     let active = true;
 
-    async function loadMessages() {
+    async function loadMessages({ initial = false } = {}) {
       const { data, error: queryError } = await supabase
         .from("service_messages")
         .select("id,sender_id,sender_role,message,image_path,read_at,created_at")
@@ -28,11 +40,13 @@ function RequestChat({ requestId, role }) {
           `El chat no está disponible: ${queryError.message}`
         );
       }
-      else setMessages(data || []);
-      setLoading(false);
+      else {
+        setMessages(data || []);
+        setError("");
+      }
+      if (initial) setLoading(false);
     }
 
-    loadMessages();
     const channel = supabase
       .channel(`request-chat-${requestId}`)
       .on("postgres_changes", {
@@ -47,10 +61,27 @@ function RequestChat({ requestId, role }) {
             : [...previous, payload.new]
         );
       })
-      .subscribe();
+      .subscribe(status => {
+        if (status === "SUBSCRIBED") loadMessages();
+      });
+
+    loadMessages({ initial: true });
+
+    // Respaldo para redes inestables o proyectos donde la publicación
+    // Realtime aún no haya sido aplicada. Sincroniza sin recargar la página.
+    const syncInterval = window.setInterval(() => {
+      if (document.visibilityState === "visible") loadMessages();
+    }, 3000);
+
+    function syncWhenVisible() {
+      if (document.visibilityState === "visible") loadMessages();
+    }
+    document.addEventListener("visibilitychange", syncWhenVisible);
 
     return () => {
       active = false;
+      window.clearInterval(syncInterval);
+      document.removeEventListener("visibilitychange", syncWhenVisible);
       supabase.removeChannel(channel);
     };
   }, [requestId]);
@@ -128,13 +159,23 @@ function RequestChat({ requestId, role }) {
       <div className="chat-header">
         <div><span>💬</span><div><h3>Chat de soporte</h3><p>Conversación entre cliente y administración</p></div></div>
         <div className="chat-header-actions">
-          {role === "client" && <button type="button" className="chat-appointment-button" aria-pressed={showAppointment} onClick={() => setShowAppointment(value => !value)}>{showAppointment ? "Volver al chat" : "📅 Agendar visita"}</button>}
+          {role === "client" && !showAppointment && !showHelp && <><button type="button" className="chat-help-button" onClick={() => setShowHelp(true)}>🤖 Ayuda rápida</button><button type="button" className="chat-appointment-button" onClick={() => setShowAppointment(true)}>📅 Agendar visita</button></>}
           <span className="chat-online"><i/> En línea</span>
         </div>
       </div>
       {showAppointment && role === "client" ? <div className="chat-appointment-panel">
         <div className="chat-assistant-message"><span>🤖</span><div><b>Asistente de instalación</b><p>Selecciona una fecha y una hora disponibles. También puedes reagendar si tu cita fue cancelada.</p></div></div>
         <AppointmentScheduler requestId={requestId} embedded defaultExpanded />
+        <button type="button" className="chat-return-button" onClick={() => setShowAppointment(false)}>← Volver al chat</button>
+      </div> : showHelp && role === "client" ? <div className="chat-help-panel">
+        <div className="chat-assistant-message"><span>🤖</span><div><b>Asistente SecureHome</b><p>Selecciona el tema sobre el que necesitas ayuda. Este asistente es gratuito y utiliza respuestas verificadas.</p></div></div>
+        {!selectedHelpTopic ? <div className="chat-help-topics">{helpTopics.map(topic => <button type="button" key={topic.id} onClick={() => setSelectedHelpTopic(topic)}><span>{topic.icon}</span><b>{topic.title}</b><i>›</i></button>)}</div> : <div className="chat-help-answer">
+          <span>{selectedHelpTopic.icon}</span><h3>{selectedHelpTopic.title}</h3><p>{selectedHelpTopic.answer}</p>
+          {selectedHelpTopic.action === "appointment" && <button type="button" className="chat-help-primary" onClick={() => { setShowHelp(false); setSelectedHelpTopic(null); setShowAppointment(true); }}>Abrir calendario</button>}
+          <button type="button" onClick={() => setSelectedHelpTopic(null)}>← Consultar otro tema</button>
+        </div>}
+        <div className="chat-help-footer"><p>¿No encontraste la respuesta?</p><button type="button" onClick={() => { setShowHelp(false); setSelectedHelpTopic(null); setText("Hola, necesito ayuda con "); }}>Hablar con administración</button></div>
+        <button type="button" className="chat-return-button" onClick={() => { setShowHelp(false); setSelectedHelpTopic(null); }}>← Volver al chat</button>
       </div> : <div className="chat-messages" aria-live="polite" ref={messagesRef}>
         {loading ? <p className="chat-empty">Cargando conversación...</p> :
           messages.length === 0 ? <div className="chat-empty"><span>👋</span><b>Inicia la conversación</b><p>Escribe un mensaje sobre la instalación o el sistema.</p></div> :
@@ -148,7 +189,7 @@ function RequestChat({ requestId, role }) {
           })}
       </div>}
       {error && <p className="chat-error">{error}</p>}
-      {!showAppointment && <form className="chat-form" onSubmit={send}>
+      {!showAppointment && !showHelp && <form className="chat-form" onSubmit={send}>
         <label className="chat-photo-button" title="Enviar fotografía">📷<input type="file" accept="image/*" onChange={event => setFile(event.target.files?.[0] || null)}/></label>
         <textarea aria-label="Escribe un mensaje" maxLength={1000} placeholder={file ? `Foto seleccionada: ${file.name}` : "Escribe tu mensaje..."} value={text} onChange={event => setText(event.target.value)} onKeyDown={event => {
           if (event.key === "Enter" && !event.shiftKey) {

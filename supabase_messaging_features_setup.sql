@@ -3,8 +3,23 @@ ALTER TABLE public.service_messages
   ADD COLUMN IF NOT EXISTS image_path text,
   ADD COLUMN IF NOT EXISTS read_at timestamptz;
 
+ALTER TABLE public.service_messages REPLICA IDENTITY FULL;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+      AND schemaname = 'public'
+      AND tablename = 'service_messages'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.service_messages;
+  END IF;
+END $$;
+
 ALTER TABLE public.service_messages
-  DROP CONSTRAINT IF EXISTS service_messages_message_check;
+  DROP CONSTRAINT IF EXISTS service_messages_message_check,
+  DROP CONSTRAINT IF EXISTS service_messages_content_check;
 
 ALTER TABLE public.service_messages
   ADD CONSTRAINT service_messages_content_check
