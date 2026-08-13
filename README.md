@@ -89,6 +89,16 @@ npm run mcp
 
 Si aparece `Configura MCP_SUPABASE_URL...`, revisa `.env.mcp`. Si el proceso queda abierto mostrando `esperando un cliente mediante stdio`, el arranque es correcto; se detiene con `Ctrl+C`.
 
+### MCP remoto
+
+La función de Vercel `api/mcp.js` publica las mismas herramientas mediante Streamable HTTP en:
+
+```text
+https://securehome-iot.vercel.app/api/mcp
+```
+
+Requiere `Authorization: Bearer <token>`. En Vercel deben existir como secretos `MCP_SUPABASE_URL`, `MCP_SUPABASE_SERVICE_ROLE_KEY` y `MCP_ACCESS_TOKEN`. Usa `mcp/mcp-config.example.json` como configuración de VS Code; el cliente solicitará el token y se conectará directamente, sin ejecutar `npm run mcp`.
+
 ## Base de datos
 
 Los archivos `supabase_*.sql` contienen las tablas, políticas RLS, funciones administrativas y triggers requeridos. Deben ejecutarse desde Supabase SQL Editor según el módulo que se vaya habilitando.

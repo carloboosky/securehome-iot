@@ -1,9 +1,19 @@
 {
-  "mcpServers": {
+  "servers": {
     "securehome-iot": {
-      "command": "npm",
-      "args": ["run", "mcp"],
-      "cwd": "/RUTA/ABSOLUTA/securehome-iot"
+      "type": "http",
+      "url": "https://securehome-iot.vercel.app/api/mcp",
+      "headers": {
+        "Authorization": "Bearer ${input:securehome-mcp-token}"
+      }
     }
-  }
+  },
+  "inputs": [
+    {
+      "id": "securehome-mcp-token",
+      "type": "promptString",
+      "description": "Token de acceso al MCP de SecureHome",
+      "password": true
+    }
+  ]
 }
