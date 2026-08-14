@@ -107,6 +107,17 @@ Después del despliegue, el cliente únicamente necesita esta URL:
 https://securehome-iot.vercel.app/api/mcp
 ```
 
+### MCP público de demostración
+
+Para la exposición académica existe un endpoint separado que no solicita login y
+solo devuelve datos ficticios. No consulta Supabase ni expone información real:
+
+```text
+https://securehome-iot.vercel.app/api/mcp-demo
+```
+
+El MCP productivo `/api/mcp` conserva OAuth y debe utilizarse para datos reales.
+
 ## Base de datos
 
 Los archivos `supabase_*.sql` contienen las tablas, políticas RLS, funciones administrativas y triggers requeridos. Deben ejecutarse desde Supabase SQL Editor según el módulo que se vaya habilitando.
