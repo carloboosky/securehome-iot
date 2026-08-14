@@ -117,6 +117,9 @@ https://securehome-iot.vercel.app/api/mcp-demo
 ```
 
 El MCP productivo `/api/mcp` conserva OAuth y debe utilizarse para datos reales.
+El mismo endpoint demo acepta `GET` para que un navegador o un asistente con
+navegación pueda revisar la descripción, las herramientas y los usuarios ficticios;
+los clientes MCP continúan usando `POST`.
 
 ## Base de datos
 
