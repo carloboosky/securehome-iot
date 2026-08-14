@@ -5,7 +5,9 @@
 El frontend requiere `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`. Ambas son
 configuración pública; la autorización continúa en RLS. El MCP requiere
 `MCP_SUPABASE_URL` y `MCP_SUPABASE_SERVICE_ROLE_KEY`; esta última es secreta y sólo
-debe existir en el entorno del proceso MCP.
+debe existir en el entorno del proceso MCP. El despliegue remoto también requiere
+`MCP_OAUTH_SECRET` (valor aleatorio de al menos 32 caracteres) y `MCP_PUBLIC_URL`.
+Solo los perfiles con rol `admin` pueden autorizar un cliente MCP mediante OAuth.
 
 Las migraciones `supabase_*.sql` se aplican de forma controlada en Supabase SQL
 Editor. Antes de producción se recomienda probarlas en un proyecto de staging y
@@ -19,6 +21,8 @@ guardar un respaldo lógico.
 4. Fusionar a la rama principal; Vercel genera un deployment inmutable.
 5. Ejecutar smoke tests: abrir `/`, iniciar sesión con ambos roles, consultar una
    solicitud y comprobar el stream/chat sin exponer datos de otro cliente.
+6. Agregar `https://securehome-iot.vercel.app/autorizar-mcp*` a las URL de
+   redirección permitidas de Supabase Auth y probar el login MCP.
 
 ## Monitoreo
 

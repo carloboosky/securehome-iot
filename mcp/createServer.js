@@ -23,6 +23,7 @@ export function createSecureHomeServer() {
 
   server.registerTool("list-clients", {
     description: "Lista solicitudes de SecureHome con plan, estado e información de contacto.",
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     inputSchema: z.object({
       status: z.union([z.enum(["pending", "contacted", "scheduled", "installed", "cancelled"]), z.literal("")]).optional(),
       limit: z.number().int().min(1).max(100).default(20),
@@ -36,6 +37,7 @@ export function createSecureHomeServer() {
 
   server.registerTool("get-security-overview", {
     description: "Resume cámaras, residentes, mascotas y diseño de una solicitud.",
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     inputSchema: z.object({ requestId: z.uuid(), correlationId: z.uuid().optional() }),
   }, async ({ requestId, correlationId }) => {
     const trace = createTrace("get-security-overview", correlationId);
@@ -59,12 +61,12 @@ export function createSecureHomeServer() {
     }
   });
 
-  server.registerTool("list-cameras", { description: "Lista cámaras activas de una solicitud.", inputSchema: z.object({ requestId: z.uuid() }) }, async ({ requestId }) => {
+  server.registerTool("list-cameras", { description: "Lista cámaras activas de una solicitud.", annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false }, inputSchema: z.object({ requestId: z.uuid() }) }, async ({ requestId }) => {
     const { data, error } = await supabase.from("camera_devices").select("id,stream_url,is_active,updated_at").eq("request_id", requestId).eq("is_active", true).order("updated_at");
     return error ? failure(`No se pudieron consultar las cámaras: ${error.message}`) : result(data);
   });
 
-  server.registerTool("get-household", { description: "Consulta residentes y mascotas de una solicitud.", inputSchema: z.object({ requestId: z.uuid() }) }, async ({ requestId }) => {
+  server.registerTool("get-household", { description: "Consulta residentes y mascotas de una solicitud.", annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false }, inputSchema: z.object({ requestId: z.uuid() }) }, async ({ requestId }) => {
     const [residents, pets] = await Promise.all([
       supabase.from("residents").select("id,full_name,role,is_at_home").eq("request_id", requestId).order("created_at"),
       supabase.from("pets").select("id,name,type").eq("request_id", requestId).order("created_at"),

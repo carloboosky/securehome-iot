@@ -97,7 +97,15 @@ La función de Vercel `api/mcp.js` publica las mismas herramientas mediante Stre
 https://securehome-iot.vercel.app/api/mcp
 ```
 
-Requiere `Authorization: Bearer <token>`. En Vercel deben existir como secretos `MCP_SUPABASE_URL`, `MCP_SUPABASE_SERVICE_ROLE_KEY` y `MCP_ACCESS_TOKEN`. Usa `mcp/mcp-config.example.json` como configuración de VS Code; el cliente solicitará el token y se conectará directamente, sin ejecutar `npm run mcp`.
+El MCP remoto utiliza OAuth 2.1 con PKCE. La persona pega únicamente la URL en un cliente MCP compatible, inicia sesión en SecureHome y autoriza el acceso desde el navegador. Solo las cuentas cuyo perfil tenga el rol `admin` pueden completar la autorización.
+
+En Vercel deben existir los secretos `MCP_SUPABASE_URL`, `MCP_SUPABASE_SERVICE_ROLE_KEY` y `MCP_OAUTH_SECRET`, además de `MCP_PUBLIC_URL=https://securehome-iot.vercel.app`. Genera `MCP_OAUTH_SECRET` como un valor aleatorio de al menos 32 caracteres. No lo incluyas en el repositorio ni en el frontend.
+
+Después del despliegue, el cliente únicamente necesita esta URL:
+
+```text
+https://securehome-iot.vercel.app/api/mcp
+```
 
 ## Base de datos
 
