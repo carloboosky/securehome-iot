@@ -24,13 +24,16 @@ de entrega; no impide el build. Para reproducir desde cero:
 ```bash
 npm ci
 npm run lint
+npm test
 npm run build
 ```
 
 ## Evidencia disponible
 
 - Aplicación desplegada: <https://securehome-iot.vercel.app>
-- Pipeline: pestaña **Actions** del repositorio después de publicar este commit.
+- Pipeline: pestaña **Actions** del repositorio después de publicar este commit; el
+  run conserva durante 14 días el artefacto `securehome-iot-<SHA>`.
+- Plan CI/CD: [flujo, secretos, liberación, auditoría y rollback](./CI-CD.md).
 - Arquitectura visual: `public/infografia-securehome-iot-final.png`.
 - SQL verificable: políticas RLS, funciones y concesiones en `supabase_*.sql`.
 - Contrato de IA: herramientas con validación Zod en `mcp/server.js`.

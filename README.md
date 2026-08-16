@@ -10,6 +10,7 @@ Mínimo Producto Viable de una plataforma web para administrar instalaciones y m
 - Evidencia reproducible: [docs/EVIDENCIAS.md](./docs/EVIDENCIAS.md)
 - Práctica PE-3.4 de trazabilidad: [docs/PE-3.4_CarrionCalo_Trazabilidad.md](./docs/PE-3.4_CarrionCalo_Trazabilidad.md)
 - Trabajo autónomo TA-3.4: [análisis de observabilidad y latencias](./docs/TA-3.4_CarrionCalo_Observabilidad.md)
+- Práctica CI/CD: [flujo, secretos, despliegue y rollback](./docs/CI-CD.md)
 
 ## Funcionalidades
 
@@ -45,7 +46,8 @@ npm install
 npm run dev
 ```
 
-Crea un archivo `.env` local con la configuración pública de Supabase. El archivo está excluido del repositorio.
+Copia `.env.example` como `.env` y completa la configuración pública de Supabase.
+El archivo real está excluido del repositorio.
 
 ## Scripts
 
@@ -56,9 +58,11 @@ npm run build
 npm run preview
 ```
 
-La integración continua ejecuta `npm ci`, lint y build en cada push y pull request.
+La integración continua ejecuta instalación reproducible, lint, pruebas y build en
+cada push y pull request, y conserva un artefacto identificado por el SHA.
 Consulta el procedimiento de despliegue y rollback en el
-[documento de operación](./docs/OPERACION.md).
+[documento de la práctica CI/CD](./docs/CI-CD.md) y el detalle de
+[operación](./docs/OPERACION.md).
 
 ## Servidor MCP
 
