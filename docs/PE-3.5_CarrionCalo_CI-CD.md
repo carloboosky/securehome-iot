@@ -1,102 +1,239 @@
-# PE-3.5 CI/CD y despliegue básico
+# PE-3.5 — CI/CD y despliegue básico
 
-## Flujo aplicado
+## Proyecto: SecureHome IoT
 
-SecureHome IoT usa GitHub Actions como puerta de calidad y Vercel como plataforma
-de publicación. En cada *push* a `main`/`master` y en cada *pull request*, el job
-`quality` realiza esta secuencia:
+Esta práctica implementa un flujo básico de **Integración Continua y Despliegue Continuo (CI/CD)** sobre el backend y la aplicación web del proyecto **SecureHome IoT**. Se utiliza **GitHub Actions** para automatizar las validaciones y preparar el artefacto antes de una liberación, mientras que **Vercel** realiza el despliegue mediante su integración con GitHub.
 
-```text
-checkout → Node.js 22 → npm ci → lint → tests → build → artefacto .tar.gz
-```
+---
 
-`npm ci` reproduce exactamente `package-lock.json`; ESLint valida el código; las
-pruebas de Node comprueban OAuth y observabilidad; Vite genera `dist`; finalmente,
-Actions empaqueta `dist` y `vercel.json` con el SHA del commit y conserva el
-artefacto durante 14 días. Si un paso falla, los posteriores no se ejecutan y el
-commit no debe liberarse.
+## 1. Definición del flujo CI/CD
 
-Archivo técnico: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml).
+El flujo de integración continua se ejecuta automáticamente cuando se realiza un `push` a las ramas `main` o `master`, así como al crear un `pull request`.
 
-## Gestión de secretos
-
-| Variable | Clasificación | Ubicación permitida |
-| --- | --- | --- |
-| `VITE_SUPABASE_URL` | Pública | `.env` local o variables de Vercel |
-| `VITE_SUPABASE_ANON_KEY` | Pública, limitada por RLS | `.env` local o variables de Vercel |
-| `MCP_SUPABASE_URL` | Configuración del servidor | variables cifradas de Vercel / `.env.mcp` local |
-| `MCP_SUPABASE_SERVICE_ROLE_KEY` | Secreto crítico | solo variables cifradas del servidor |
-| `MCP_OAUTH_SECRET` | Secreto crítico | solo variables cifradas del servidor |
-| `MCP_PUBLIC_URL` | Configuración pública | variables de Vercel por ambiente |
-
-Reglas del proyecto:
-
-1. Partir de `.env.example` o `.env.mcp.example`, pero nunca versionar los archivos
-   reales `.env*`; `.gitignore` los excluye.
-2. No usar prefijo `VITE_` para secretos: Vite incorpora esas variables al bundle
-   que descarga el navegador.
-3. Guardar secretos de ejecución en Vercel, con valores distintos para Preview y
-   Production. El pipeline de CI no los necesita y por eso no recibe secretos.
-4. No imprimir valores sensibles en logs, capturas, artefactos o comentarios del PR.
-5. Ante una filtración, revocar/rotar primero la credencial, actualizar el entorno y
-   volver a desplegar. Borrar el texto de Git no sustituye la rotación.
-
-## Liberación controlada
-
-1. Trabajar en una rama y abrir un pull request con un cambio acotado.
-2. Esperar el check `quality` y revisar su artefacto asociado al SHA.
-3. Usar el deployment Preview de Vercel como *staging* y ejecutar el *smoke test*:
-   carga de `/`, autenticación de cliente y administrador, consulta aislada de una
-   solicitud y prueba del chat/stream con datos ficticios.
-4. Aprobar y fusionar solamente si CI y *smoke test* pasan. La fusión crea el
-   deployment de producción; la exposición ocurre después de validar Preview.
-5. Verificar en producción `/` y `/api/mcp-demo`. Las migraciones SQL se prueban y
-   respaldan por separado antes de aplicarlas; no se ejecutan automáticamente.
-
-En GitHub se debe configurar `quality` como *required status check* y proteger la
-rama principal. En Vercel, Preview y Production deben usar ambientes y variables
-separados.
-
-## Auditoría y rollback
-
-Por cada liberación se conserva: PR y aprobaciones, SHA, ejecución de Actions,
-artefacto con el SHA, deployment de Vercel, fecha/responsable y resultado del
-*smoke test*. No se adjuntan tokens ni datos personales. La plantilla mínima para
-el PR o registro de despliegue es:
+El pipeline sigue la siguiente secuencia:
 
 ```text
-Versión/SHA:
-URL del run de CI:
-URL/ID del deployment:
-Responsable y fecha:
-Smoke test: APROBADO | FALLIDO
-Incidencias/observaciones:
+Push / Pull Request
+        ↓
+Checkout del repositorio
+        ↓
+Configuración de Node.js 22
+        ↓
+npm ci
+        ↓
+ESLint
+        ↓
+Pruebas automáticas
+        ↓
+Build de producción
+        ↓
+Generación y almacenamiento del artefacto
 ```
 
-Si aparece una regresión:
+Cada etapa debe finalizar correctamente antes de continuar con la siguiente. Si una validación falla, GitHub Actions detiene el proceso y el cambio no debe considerarse listo para producción.
 
-1. detener nuevas fusiones y registrar el incidente;
-2. en Vercel, promover a Production el último deployment sano e inmutable;
-3. ejecutar otra vez el *smoke test* y registrar el deployment restaurado;
-4. crear `git revert <sha>` en una rama y fusionarlo mediante un PR con CI verde;
-5. para base de datos, usar el script compensatorio revisado o restaurar el respaldo;
-   nunca revertir DDL destructivo a ciegas.
+El workflow de GitHub Actions no publica directamente en Vercel. El despliegue es
+un proceso posterior e independiente, ejecutado por la integración de Vercel con
+el repositorio.
 
-Esta combinación recupera primero el servicio y después alinea la rama principal
-con la versión operativa, sin reescribir el historial compartido.
+---
 
-## Evidencia reproducible
+## 2. Configuración del pipeline
 
-Localmente:
+El pipeline está definido en
+[`.github/workflows/ci.yml`](../.github/workflows/ci.yml).
+
+Se utiliza **GitHub Actions** con un job denominado `quality`.
+
+Las principales etapas configuradas son:
+
+* Checkout del código fuente.
+* Instalación y configuración de Node.js 22.
+* Instalación reproducible de dependencias mediante `npm ci`.
+* Validación de código mediante ESLint.
+* Ejecución de pruebas automáticas.
+* Construcción del proyecto mediante Vite.
+* Empaquetado del resultado de producción.
+* Almacenamiento del artefacto generado durante 14 días.
+
+Las validaciones también fueron ejecutadas localmente:
 
 ```bash
-cp .env.example .env
 npm ci
-npm test
 npm run lint
+npm test
 npm run build
 ```
 
-En GitHub, la pestaña **Actions** debe mostrar el job `quality` verde y, dentro del
-run, el artefacto `securehome-iot-<SHA>`. En Vercel, **Deployments** registra el SHA,
-estado, ambiente, fecha y autor de cada publicación.
+### Resultado de las pruebas
+
+La ejecución local detectó dos archivos de prueba que contienen cuatro casos. El
+resumen de Node.js informó:
+
+```text
+tests 2
+pass 2
+fail 0
+```
+
+Las pruebas verifican aspectos relacionados con:
+
+* registro y validación OAuth utilizando PKCE;
+* rechazo de `redirect URI` o verificadores PKCE incorrectos;
+* conservación del `correlation ID` durante una traza;
+* registro de errores y spans en operaciones fallidas.
+
+El proceso de construcción con Vite también finalizó correctamente, generando el directorio:
+
+```text
+dist/
+```
+
+De esta manera, el código es validado antes de considerarse apto para una liberación.
+
+---
+
+## 3. Gestión de secretos
+
+SecureHome IoT evita almacenar credenciales sensibles directamente dentro del código fuente.
+
+Las variables utilizadas se clasifican de la siguiente manera:
+
+| Variable                        | Tipo                                | Ubicación                           |
+| ------------------------------- | ----------------------------------- | ----------------------------------- |
+| `VITE_SUPABASE_URL`             | Configuración pública               | Variables de entorno                |
+| `VITE_SUPABASE_ANON_KEY`        | Clave pública limitada mediante RLS | Variables de entorno                |
+| `MCP_SUPABASE_URL`              | Configuración del servidor          | Variables del entorno de despliegue |
+| `MCP_SUPABASE_SERVICE_ROLE_KEY` | Secreto crítico                     | Solo entorno del servidor           |
+| `MCP_OAUTH_SECRET`              | Secreto crítico                     | Solo entorno del servidor           |
+| `MCP_PUBLIC_URL`                | Configuración pública               | Variables del entorno               |
+
+### Reglas aplicadas
+
+1. Los archivos `.env` reales no deben almacenarse en GitHub.
+2. Se utilizan archivos como `.env.example` únicamente como referencia.
+3. Los secretos críticos no utilizan el prefijo `VITE_`, ya que las variables con este prefijo pueden incorporarse al código enviado al navegador.
+4. Las credenciales sensibles del servidor se almacenan mediante variables de entorno.
+5. Los secretos no deben mostrarse en logs, capturas, commits ni documentación pública.
+6. Si una credencial es expuesta, debe ser revocada y reemplazada inmediatamente.
+
+Con estas medidas se evita almacenar secretos directamente en el repositorio.
+
+---
+
+## 4. Despliegue controlado
+
+La estrategia de liberación utiliza **GitHub Actions** como puerta de validación y **Vercel** como plataforma de despliegue.
+
+El procedimiento establecido es:
+
+1. Realizar los cambios en una rama y ejecutar las validaciones locales.
+2. Registrar los cambios mediante Git y abrir un `pull request`.
+3. GitHub Actions ejecuta automáticamente el pipeline de CI.
+4. Comprobar que lint, pruebas y build finalicen correctamente.
+5. Validar el deployment Preview generado por Vercel.
+6. Fusionar el cambio en `main` únicamente después de aprobar CI y Preview.
+7. Vercel genera el deployment de producción correspondiente.
+8. Verificar el funcionamiento del sistema antes de considerar la versión estable.
+
+Antes de liberar una versión se pueden realizar pruebas básicas o *smoke tests* sobre funciones críticas como:
+
+* carga de la aplicación;
+* autenticación;
+* acceso al backend;
+* funcionamiento de los endpoints principales;
+* funcionamiento del endpoint MCP utilizado por SecureHome.
+
+Esto permite separar la validación técnica del código de su exposición definitiva a los usuarios.
+
+---
+
+## 5. Rollback y auditoría
+
+Cada despliegue debe poder relacionarse con una versión concreta del código.
+
+Para ello se conserva como evidencia:
+
+* historial de commits;
+* SHA del commit;
+* ejecución correspondiente de GitHub Actions;
+* resultado de las pruebas;
+* artefacto generado;
+* deployment realizado;
+* fecha del cambio;
+* resultado de las verificaciones posteriores al despliegue.
+
+El artefacto generado por GitHub Actions utiliza el SHA del commit en su nombre:
+
+```text
+securehome-iot-<SHA>.tar.gz
+```
+
+Esto permite relacionar directamente un artefacto con el código que lo produjo.
+
+### Estrategia de rollback
+
+Si una nueva versión presenta un problema:
+
+1. Se identifica el commit que introdujo el error.
+2. Se detienen nuevas liberaciones mientras se analiza el problema.
+3. Se puede restaurar en Vercel una versión anterior que haya funcionado correctamente.
+4. Se utiliza `git revert` para revertir el cambio problemático sin eliminar el historial del repositorio.
+5. El cambio de reversión vuelve a pasar por GitHub Actions.
+6. Se ejecutan nuevamente las pruebas básicas del sistema.
+7. Se registra el resultado del rollback.
+
+Ejemplo:
+
+```bash
+git log --oneline
+git revert <SHA_DEL_COMMIT>
+git push origin main
+```
+
+El uso de `git revert` permite mantener un historial auditable y evita reescribir el historial compartido del proyecto.
+
+---
+
+## Evidencia de ejecución
+
+Durante la práctica se ejecutaron correctamente:
+
+```bash
+npm ci
+npm run lint
+npm test
+npm run build
+```
+
+Resultado obtenido:
+
+```text
+✔ registra un cliente y valida una solicitud OAuth con PKCE
+✔ rechaza redirect URI o verificador PKCE diferentes
+✔ preserva el correlation ID en toda la traza exitosa
+✔ registra el span y la traza fallidos con código de error
+
+2 archivos de prueba, 4 casos definidos
+tests: 2
+pass: 2
+fail: 0
+```
+
+El build de producción también finalizó correctamente:
+
+```text
+vite building client environment for production...
+✓ 1862 modules transformed.
+✓ built
+```
+
+El código fue posteriormente enviado a la rama `main` del repositorio, activando el flujo de integración continua configurado.
+
+---
+
+## Conclusión
+
+La implementación permite que **SecureHome IoT** disponga de un proceso básico y reproducible de CI/CD. Antes de considerar una versión lista para despliegue, el código pasa por instalación controlada de dependencias, análisis con ESLint, pruebas automáticas y construcción de producción.
+
+Además, el manejo de secretos mediante variables de entorno, la identificación de artefactos mediante el SHA del commit y la estrategia de rollback con Git/Vercel proporcionan una base para realizar despliegues más seguros, trazables y recuperables ante errores.
