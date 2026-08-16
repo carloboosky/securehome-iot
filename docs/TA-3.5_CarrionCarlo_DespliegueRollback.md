@@ -7,7 +7,7 @@
 ## 1. Síntesis del caso
 
 Este análisis profundiza el flujo implementado en la práctica
-[PE-3.5](./PE-3.5_CarrionCalo_CI-CD.md). SecureHome IoT es una aplicación web con
+[PE-3.5](./PE-3.5_CarrionCarlo_CI-CD.md). SecureHome IoT es una aplicación web con
 React y Vite que utiliza Supabase para autenticación, datos y tiempo real. También
 incluye funciones de servidor en Vercel para exponer un MCP protegido mediante
 OAuth. Por ello, una liberación puede afectar tanto la interfaz como la autorización
@@ -192,7 +192,7 @@ a la complejidad del proyecto y un rollback rápido mediante deployments inmutab
 ## 6. Evidencia relacionada
 
 - Pipeline: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml).
-- Práctica base: [PE-3.5 CI/CD y despliegue básico](./PE-3.5_CarrionCalo_CI-CD.md).
+- Práctica base: [PE-3.5 CI/CD y despliegue básico](./PE-3.5_CarrionCarlo_CI-CD.md).
 - Procedimiento operativo: [operación, despliegue y rollback](./OPERACION.md).
 - Evidencia funcional: [registro de evidencias](./EVIDENCIAS.md).
 - Aplicación desplegada: <https://securehome-iot.vercel.app>.

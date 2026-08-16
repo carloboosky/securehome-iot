@@ -33,7 +33,7 @@ npm run build
 - Aplicación desplegada: <https://securehome-iot.vercel.app>
 - Pipeline: pestaña **Actions** del repositorio después de publicar este commit; el
   run conserva durante 14 días el artefacto `securehome-iot-<SHA>`.
-- PE-3.5 CI/CD y despliegue básico: [flujo, secretos, liberación, auditoría y rollback](./PE-3.5_CarrionCalo_CI-CD.md).
+- PE-3.5 CI/CD y despliegue básico: [flujo, secretos, liberación, auditoría y rollback](./PE-3.5_CarrionCarlo_CI-CD.md).
 - Arquitectura visual: `public/infografia-securehome-iot-final.png`.
 - SQL verificable: políticas RLS, funciones y concesiones en `supabase_*.sql`.
 - Contrato de IA: herramientas con validación Zod en `mcp/server.js`.
