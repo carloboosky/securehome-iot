@@ -11,6 +11,7 @@ Mínimo Producto Viable de una plataforma web para administrar instalaciones y m
 - Práctica PE-3.4 de trazabilidad: [docs/PE-3.4_CarrionCalo_Trazabilidad.md](./docs/PE-3.4_CarrionCalo_Trazabilidad.md)
 - Trabajo autónomo TA-3.4: [análisis de observabilidad y latencias](./docs/TA-3.4_CarrionCalo_Observabilidad.md)
 - PE-3.5 CI/CD y despliegue básico: [flujo, secretos, despliegue y rollback](./docs/PE-3.5_CarrionCalo_CI-CD.md)
+- Trabajo autónomo TA-3.5: [estrategia de despliegue y rollback](./docs/TA-3.5_CarrionCalo_DespliegueRollback.md)
 
 ## Funcionalidades
 
