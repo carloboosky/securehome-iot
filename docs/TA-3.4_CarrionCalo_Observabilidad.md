@@ -1,6 +1,6 @@
 # TA-3.4 — Análisis de observabilidad, trazas y latencias
 
-**Estudiante:** Carrion Calo  
+**Estudiante:** Carrion Carlo  
 **Actividad:** Trabajo autónomo TA-3.4 — Reporte de trazas y latencias  
 **Proyecto:** SecureHome IoT
 
