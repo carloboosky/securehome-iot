@@ -1,6 +1,6 @@
 # TA-3.5 — Estrategia de despliegue y rollback
 
-**Estudiante:** Carrion Calo  
+**Estudiante:** Carrion Carlo  
 **Actividad:** Trabajo autónomo TA-3.5 — Estrategia de despliegue y rollback  
 **Proyecto:** SecureHome IoT
 
