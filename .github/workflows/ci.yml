@@ -5,6 +5,10 @@ on:
     branches: [main, master]
   pull_request:
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -28,3 +32,12 @@ jobs:
         run: npm test
       - name: Production build
         run: npm run build
+      - name: Package immutable artifact
+        run: tar -czf securehome-iot-${{ github.sha }}.tar.gz dist vercel.json
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: securehome-iot-${{ github.sha }}
+          path: securehome-iot-${{ github.sha }}.tar.gz
+          if-no-files-found: error
+          retention-days: 14
