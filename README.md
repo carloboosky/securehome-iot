@@ -10,7 +10,7 @@ Mínimo Producto Viable de una plataforma web para administrar instalaciones y m
 - Evidencia reproducible: [docs/EVIDENCIAS.md](./docs/EVIDENCIAS.md)
 - Práctica PE-3.4 de trazabilidad: [docs/PE-3.4_CarrionCalo_Trazabilidad.md](./docs/PE-3.4_CarrionCalo_Trazabilidad.md)
 - Trabajo autónomo TA-3.4: [análisis de observabilidad y latencias](./docs/TA-3.4_CarrionCalo_Observabilidad.md)
-- Práctica CI/CD: [flujo, secretos, despliegue y rollback](./docs/CI-CD.md)
+- PE-3.5 CI/CD y despliegue básico: [flujo, secretos, despliegue y rollback](./docs/PE-3.5_CarrionCalo_CI-CD.md)
 
 ## Funcionalidades
 
@@ -61,7 +61,7 @@ npm run preview
 La integración continua ejecuta instalación reproducible, lint, pruebas y build en
 cada push y pull request, y conserva un artefacto identificado por el SHA.
 Consulta el procedimiento de despliegue y rollback en el
-[documento de la práctica CI/CD](./docs/CI-CD.md) y el detalle de
+[documento PE-3.5 CI/CD y despliegue básico](./docs/PE-3.5_CarrionCalo_CI-CD.md) y el detalle de
 [operación](./docs/OPERACION.md).
 
 ## Servidor MCP

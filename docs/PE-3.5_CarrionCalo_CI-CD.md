@@ -1,4 +1,4 @@
-# Práctica de integración continua y despliegue seguro
+# PE-3.5 CI/CD y despliegue básico
 
 ## Flujo aplicado
 
